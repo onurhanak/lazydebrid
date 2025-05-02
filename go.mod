@@ -1,4 +1,4 @@
-module main
+module lazydebrid
 
 go 1.24.2
 
