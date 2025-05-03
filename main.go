@@ -30,6 +30,7 @@ func init() {
 const (
 	downloadsURL = "https://api.real-debrid.com/rest/1.0/downloads?page=1&limit=5000"
 	addMagnetURL = "https://api.real-debrid.com/rest/1.0/torrents/addMagnet"
+	statusURL    = "https://api.real-debrid.com/rest/1.0/torrents/info/"
 	configFile   = "lazyDebrid.json"
 )
 
@@ -66,6 +67,29 @@ type DebridDownload struct {
 	Download   string `json:"download"`
 	Streamable int64  `json:"streamable"`
 	Generated  string `json:"generated"`
+}
+
+type TorrentStatus struct {
+	ID               string        `json:"id"`
+	Filename         string        `json:"filename"`
+	OriginalFilename string        `json:"original_filename"`
+	Hash             string        `json:"hash"`
+	Bytes            int64         `json:"bytes"`
+	OriginalBytes    int64         `json:"original_bytes"`
+	Host             string        `json:"host"`
+	Split            int           `json:"split"`
+	Progress         int           `json:"progress"`
+	Status           string        `json:"status"`
+	Added            string        `json:"added"`
+	Files            []TorrentFile `json:"files"`
+	Links            []string      `json:"links"`
+}
+
+type TorrentFile struct {
+	ID       int    `json:"id"`
+	Path     string `json:"path"`
+	Bytes    int64  `json:"bytes"`
+	Selected int    `json:"selected"`
 }
 
 type ActiveDownload struct {
@@ -398,6 +422,49 @@ func quit(g *gocui.Gui, v *gocui.View) error {
 
 // ACTIONS
 
+func getTorrentStatus(g *gocui.Gui, v *gocui.View) error {
+	_, cy := v.Cursor()
+	line, err := v.Line(cy)
+	if err != nil {
+		return err
+	}
+
+	statusURL := fmt.Sprintf("https://api.real-debrid.com/rest/1.0/torrents/info/%s", line)
+	req, err := http.NewRequest("GET", statusURL, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", userApiToken))
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	infoView, _ := g.View("info")
+	now := time.Now().Format("02 Jan 2006 15:04:00")
+
+	if resp.StatusCode != http.StatusOK {
+		msg, _ := io.ReadAll(resp.Body)
+		fmt.Fprintf(infoView, "[%s] Failed to fetch status: %s\n", now, msg)
+		return nil
+	}
+
+	var info TorrentStatus
+	if err := json.NewDecoder(resp.Body).Decode(&info); err != nil {
+		fmt.Fprintf(infoView, "[%s] Failed to parse status\n", now)
+		return err
+	}
+
+	fmt.Fprintf(infoView,
+		"[%s]\nStatus for %s:\n  Status: %s\n  Progress: %d%%\n  Added: %s\n  Files: %d\n\n",
+		now, info.Filename, info.Status, info.Progress, info.Added, len(info.Files),
+	)
+
+	return nil
+}
+
 func deleteTorrent(g *gocui.Gui, v *gocui.View) error {
 	_, cy := v.Cursor()
 	line, err := v.Line(cy)
@@ -632,6 +699,7 @@ func keybindings(g *gocui.Gui) error {
 		}
 	}
 
+	bind("activeTorrents", 's', gocui.ModNone, getTorrentStatus)
 	bind("torrents", gocui.KeyArrowDown, gocui.ModNone, cursorDown)
 	bind("torrents", 'd', gocui.ModNone, deleteTorrent)
 	bind("torrents", gocui.KeyArrowUp, gocui.ModNone, cursorUp)
