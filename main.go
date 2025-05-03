@@ -653,7 +653,6 @@ func layout(g *gocui.Gui) error {
 		footerView.Title = ""
 		fmt.Fprintln(footerView,
 			"?: Show shortcuts",
-			// "TAB: Switch | ↑↓: Navigate | ENTER: Download | /: Search | ^A: Add Magnet | ^C: Copy Link | ^P: Set Path | ^X: Set API Key | ^Q: Quit",
 		)
 	}
 
