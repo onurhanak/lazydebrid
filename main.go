@@ -315,6 +315,7 @@ func setApiToken(g *gocui.Gui, v *gocui.View) error {
 // TORRENTS
 
 func getUserTorrents() map[string]DebridDownload {
+
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", downloadsURL, nil)
 	if err != nil {
@@ -342,6 +343,7 @@ func getUserTorrents() map[string]DebridDownload {
 		downloadMap[torrentItem.Filename] = torrentItem
 	}
 
+	log.Println(downloadMap)
 	return downloadMap
 }
 
