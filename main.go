@@ -27,9 +27,26 @@ func init() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 }
 
-// URLS
-var downloadsURL string = "https://api.real-debrid.com/rest/1.0/downloads?page=1&limit=5000&page=1"
-var addMagnetURL string = "https://api.real-debrid.com/rest/1.0/torrents/addMagnet"
+const (
+	downloadsURL = "https://api.real-debrid.com/rest/1.0/downloads?page=1&limit=5000"
+	addMagnetURL = "https://api.real-debrid.com/rest/1.0/torrents/addMagnet"
+	configFile   = "lazyDebrid.json"
+)
+
+var (
+	userDownloads  []DebridDownload
+	userSettings   = make(map[string]string)
+	downloadMap    = make(map[string]DebridDownload)
+	views          = []string{"search", "torrents", "main"}
+	currentViewIdx int
+
+	userApiToken     string
+	userDownloadPath string
+	searchQuery      string
+
+	userConfigPath, _ = os.UserConfigDir()
+	lazyDebridConfig  = filepath.Join(userConfigPath, "lazyDebrid.json")
+)
 
 // MODELS
 type DebridDownload struct {
@@ -46,16 +63,6 @@ type DebridDownload struct {
 	Generated  string `json:"generated"`
 }
 
-// DATA
-var userDownloads []DebridDownload
-var userSettings = make(map[string]string)
-var downloadMap = make(map[string]DebridDownload)
-
-// VIEW
-var searchQuery string
-var views = []string{"search", "torrents", "main"}
-var currentViewIdx = 0
-
 func nextView(g *gocui.Gui, v *gocui.View) error {
 	currentViewIdx = (currentViewIdx + 1) % len(views)
 	name := views[currentViewIdx]
@@ -64,21 +71,91 @@ func nextView(g *gocui.Gui, v *gocui.View) error {
 }
 
 // CONFIG
-var userConfigPath, _ = os.UserConfigDir()
-var lazyDebridConfig = filepath.Join(userConfigPath, "lazyDebrid.json")
-var userApiToken string
-var userDownloadPath string
+
+func configPath() string {
+	dir, _ := os.UserConfigDir()
+	return filepath.Join(dir, configFile)
+}
 
 func loadUserSettings() error {
-	content, err := os.ReadFile(lazyDebridConfig)
-	if err != nil {
-		log.Println("Set API key first.")
-	} else {
-		_ = json.Unmarshal(content, &userSettings)
+	data, err := os.ReadFile(configPath())
+	if err == nil {
+		_ = json.Unmarshal(data, &userSettings)
 	}
-	userApiToken = userSettings["apiToken"]
-	userDownloadPath = userSettings["downloadPath"]
+	userApiToken = strings.TrimSpace(userSettings["apiToken"])
+	userDownloadPath = strings.TrimSpace(userSettings["downloadPath"])
 	return nil
+}
+
+func saveSetting(key, value string) error {
+	value = strings.TrimSpace(value)
+	data, _ := os.ReadFile(configPath())
+	_ = json.Unmarshal(data, &userSettings)
+	userSettings[key] = value
+	content, err := json.MarshalIndent(userSettings, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(configPath(), content, 0644)
+}
+
+func showModal(g *gocui.Gui, name, title string, content string, onSubmit func(string)) error {
+	maxX, maxY := g.Size()
+	w, h := maxX/2, 5
+	x0 := (maxX - w) / 2
+	y0 := (maxY - h) / 2
+	x1 := x0 + w
+	y1 := y0 + h
+
+	if v, err := g.SetView(name, x0, y0, x1, y1); err != nil {
+		if err != gocui.ErrUnknownView {
+			return err
+		}
+
+		v.Title = title
+		if name != "help" {
+			v.Title = title
+			v.Editable = true
+			v.Wrap = true
+		} else {
+			v.Editable = false
+			v.Wrap = false
+			fmt.Fprint(v, content)
+		}
+		_, _ = g.SetCurrentView(name)
+		g.SetKeybinding(name, gocui.KeyEnter, gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
+			input := strings.TrimSpace(v.Buffer())
+			g.DeleteView(name)
+			g.SetCurrentView("torrents")
+			onSubmit(input)
+			return nil
+		})
+	}
+	return nil
+}
+
+func showSetPathModal(g *gocui.Gui, v *gocui.View) error {
+	return showModal(g, "setPath", "Set Download Path", "", func(input string) {
+		_ = saveSetting("downloadPath", input)
+	})
+}
+
+func showSetTokenModal(g *gocui.Gui, v *gocui.View) error {
+	return showModal(g, "setToken", "Set API Token", "", func(input string) {
+		_ = saveSetting("apiToken", input)
+	})
+}
+
+func showAddMagnetModal(g *gocui.Gui, v *gocui.View) error {
+	return showModal(g, "addMagnet", "Add Magnet Link", "", func(input string) {
+		_ = sendLinkToAPI(input)
+	})
+}
+
+func showHelpModal(g *gocui.Gui, v *gocui.View) error {
+	content := "TAB: Switch | ↑↓: Navigate | ENTER: Download | /: Search\n^A: Add Magnet | ^C: Copy Link | ^P: Set Path\n^X: Set API Key | ^Q: Quit"
+
+	return showModal(g, "help", "Shortcuts", content, func(string) {})
 }
 
 func saveApiToken(apiToken string) bool {
@@ -338,6 +415,9 @@ func downloadFile(torrentItem DebridDownload) bool {
 		log.Println(err)
 	}
 	resp, err := http.Get(torrentItem.Download)
+	if err != nil {
+		log.Println(err)
+	}
 	defer resp.Body.Close()
 	n, err := io.Copy(out, resp.Body)
 	if err == nil {
@@ -443,8 +523,7 @@ func deleteCurrentView(g *gocui.Gui, v *gocui.View) error {
 	currentView := g.CurrentView()
 	log.Println(currentView.Name())
 	if currentView == nil {
-		log.Println("Deleted view:", currentView.Name())
-		return nil // or log and return
+		return nil
 	}
 
 	log.Println(currentView.Name())
@@ -486,55 +565,26 @@ func showControls(g *gocui.Gui, v *gocui.View) error {
 // BINDINGS
 
 func keybindings(g *gocui.Gui) error {
-	if err := g.SetKeybinding("torrents", gocui.KeyArrowDown, gocui.ModNone, cursorDown); err != nil {
-		return err
+	bind := func(viewname string, key interface{}, mod gocui.Modifier, handler func(*gocui.Gui, *gocui.View) error) {
+		if err := g.SetKeybinding(viewname, key, mod, handler); err != nil {
+			log.Fatalf("binding failed: %v", err)
+		}
 	}
 
-	if err := g.SetKeybinding("controls", 'q', gocui.ModNone, deleteCurrentView); err != nil {
-		return err
-	}
-	if err := g.SetKeybinding("", '/', gocui.ModNone, focusSearchBar); err != nil {
-		return err
-	}
-	if err := g.SetKeybinding("torrents", gocui.KeyArrowUp, gocui.ModNone, cursorUp); err != nil {
-		return err
-	}
-	if err := g.SetKeybinding("torrents", 'j', gocui.ModNone, cursorDown); err != nil {
-		return err
-	}
-	if err := g.SetKeybinding("torrents", 'k', gocui.ModNone, cursorUp); err != nil {
-		return err
-	}
-	if err := g.SetKeybinding("torrents", gocui.KeyEnter, gocui.ModNone, downloadSelected); err != nil {
-		return err
-	}
-	if err := g.SetKeybinding("", gocui.KeyTab, gocui.ModNone, nextView); err != nil {
-		return err
-	}
-	if err := g.SetKeybinding("", '?', gocui.ModNone, showControls); err != nil {
-		return err
-	}
-	if err := g.SetKeybinding("search", gocui.KeyEnter, gocui.ModNone, searchKeyPress); err != nil {
-		return err
-	}
-	if err := g.SetKeybinding("", gocui.KeyCtrlD, gocui.ModNone, downloadSelected); err != nil {
-		return err
-	}
-	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, copyDownloadLink); err != nil {
-		return err
-	}
-	if err := g.SetKeybinding("", gocui.KeyCtrlA, gocui.ModNone, addMagnetLink); err != nil {
-		return err
-	}
-	if err := g.SetKeybinding("", gocui.KeyCtrlP, gocui.ModNone, setDownloadPath); err != nil {
-		return err
-	}
-	if err := g.SetKeybinding("", gocui.KeyCtrlX, gocui.ModNone, setApiToken); err != nil {
-		return err
-	}
-	if err := g.SetKeybinding("", gocui.KeyCtrlQ, gocui.ModNone, quit); err != nil {
-		return err
-	}
+	bind("torrents", gocui.KeyArrowDown, gocui.ModNone, cursorDown)
+	bind("torrents", gocui.KeyArrowUp, gocui.ModNone, cursorUp)
+	bind("torrents", gocui.KeyEnter, gocui.ModNone, downloadSelected)
+	bind("torrents", '/', gocui.ModNone, focusSearchBar)
+	bind("details", '/', gocui.ModNone, focusSearchBar)
+	bind("search", gocui.KeyEnter, gocui.ModNone, searchKeyPress)
+	bind("", gocui.KeyCtrlC, gocui.ModNone, copyDownloadLink)
+	bind("", gocui.KeyCtrlD, gocui.ModNone, downloadSelected)
+	bind("", gocui.KeyCtrlA, gocui.ModNone, showAddMagnetModal)
+	bind("", gocui.KeyCtrlP, gocui.ModNone, showSetPathModal)
+	bind("", gocui.KeyCtrlX, gocui.ModNone, showSetTokenModal)
+	bind("", gocui.KeyCtrlQ, gocui.ModNone, quit)
+	bind("", gocui.KeyTab, gocui.ModNone, nextView)
+	bind("", '?', gocui.ModNone, showHelpModal)
 	return nil
 }
 
