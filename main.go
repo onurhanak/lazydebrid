@@ -34,11 +34,12 @@ const (
 )
 
 var (
-	userDownloads  []DebridDownload
-	userSettings   = make(map[string]string)
-	downloadMap    = make(map[string]DebridDownload)
-	views          = []string{"search", "torrents", "main"}
-	currentViewIdx int
+	userDownloads   []DebridDownload
+	userSettings    = make(map[string]string)
+	downloadMap     = make(map[string]DebridDownload)
+	activeDownloads []ActiveDownload
+	views           = []string{"search", "torrents", "main"}
+	currentViewIdx  int
 
 	userApiToken     string
 	userDownloadPath string
@@ -61,6 +62,11 @@ type DebridDownload struct {
 	Download   string `json:"download"`
 	Streamable int64  `json:"streamable"`
 	Generated  string `json:"generated"`
+}
+
+type ActiveDownload struct {
+	ID  string `json:"id"`
+	URI string `json:"uri"`
 }
 
 func nextView(g *gocui.Gui, v *gocui.View) error {
@@ -374,6 +380,42 @@ func quit(g *gocui.Gui, v *gocui.View) error {
 
 // ACTIONS
 
+func deleteTorrent(g *gocui.Gui, v *gocui.View) error {
+	_, cy := v.Cursor()
+	line, err := v.Line(cy)
+	if err != nil {
+		return err
+	}
+	item, exists := downloadMap[line]
+	if !exists {
+		return fmt.Errorf("item not found in map")
+	}
+
+	log.Println(item)
+	deleteURL := fmt.Sprintf("https://api.real-debrid.com/rest/1.0/torrents/delete/%s", item.Id)
+	req, err := http.NewRequest("DELETE", deleteURL, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", userApiToken))
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	infoView, _ := g.View("info")
+	now := time.Now().Format("02 Jan 2006 15:04:00")
+	if resp.StatusCode == http.StatusNoContent {
+		fmt.Fprintf(infoView, "[%s] Deleted torrent: %s", now, line)
+	} else {
+		msg, _ := io.ReadAll(resp.Body)
+		fmt.Fprintf(infoView, "[%s] Failed to delete %s: %s", now, line, msg)
+	}
+	return nil
+}
+
 func downloadSelected(g *gocui.Gui, v *gocui.View) error {
 	_, cy := v.Cursor()
 	line, err := v.Line(cy)
@@ -479,13 +521,14 @@ func sendLinkToAPI(magnetLink string) error {
 		return fmt.Errorf("HTTP %d: %s", resp.StatusCode, msg)
 	}
 
-	var result struct {
-		ID  string `json:"id"`
-		URI string `json:"uri"`
-	}
+	var result ActiveDownload
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return err
+		return fmt.Errorf("error decoding addMagnet response: %w", err)
 	}
+
+	log.Printf("Magnet added. Torrent ID: %s", result.ID)
+	activeDownloads = append(activeDownloads, result)
+
 	return nil
 }
 
@@ -572,6 +615,7 @@ func keybindings(g *gocui.Gui) error {
 	}
 
 	bind("torrents", gocui.KeyArrowDown, gocui.ModNone, cursorDown)
+	bind("torrents", 'd', gocui.ModNone, deleteTorrent)
 	bind("torrents", gocui.KeyArrowUp, gocui.ModNone, cursorUp)
 	bind("torrents", gocui.KeyEnter, gocui.ModNone, downloadSelected)
 	bind("torrents", '/', gocui.ModNone, focusSearchBar)
