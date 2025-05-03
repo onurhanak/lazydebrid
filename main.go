@@ -17,6 +17,21 @@ import (
 	"github.com/jroimartin/gocui"
 )
 
+// LOG
+func init() {
+	logFile, err := os.OpenFile("lazydebrid.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		log.Fatal("Could not open log file:", err)
+	}
+	log.SetOutput(logFile)
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+}
+
+// URLS
+var downloadsURL string = "https://api.real-debrid.com/rest/1.0/downloads?page=1&limit=5000&page=1"
+var addMagnetURL string = "https://api.real-debrid.com/rest/1.0/torrents/addMagnet"
+
+// MODELS
 type DebridDownload struct {
 	Id         string `json:"id"`
 	Filename   string `json:"filename"`
@@ -31,34 +46,39 @@ type DebridDownload struct {
 	Generated  string `json:"generated"`
 }
 
+// DATA
 var userDownloads []DebridDownload
 var userSettings = make(map[string]string)
 var downloadMap = make(map[string]DebridDownload)
-var userConfigPath, _ = os.UserConfigDir()
-var lazyDebridConfig = filepath.Join(userConfigPath, "lazyDebrid.json")
+
+// VIEW
 var searchQuery string
 var views = []string{"search", "torrents", "main"}
 var currentViewIdx = 0
-var userApiToken string
-var userDownloadPath string
-
-func loadUserSettings() error {
-	content, err := os.ReadFile(lazyDebridConfig)
-	if err != nil {
-		fmt.Println("Set API key first.")
-	} else {
-		_ = json.Unmarshal(content, &userSettings)
-	}
-	userApiToken = userSettings["apiToken"]
-	userDownloadPath = userSettings["downloadPath"]
-	return nil
-}
 
 func nextView(g *gocui.Gui, v *gocui.View) error {
 	currentViewIdx = (currentViewIdx + 1) % len(views)
 	name := views[currentViewIdx]
 	_, err := g.SetCurrentView(name)
 	return err
+}
+
+// CONFIG
+var userConfigPath, _ = os.UserConfigDir()
+var lazyDebridConfig = filepath.Join(userConfigPath, "lazyDebrid.json")
+var userApiToken string
+var userDownloadPath string
+
+func loadUserSettings() error {
+	content, err := os.ReadFile(lazyDebridConfig)
+	if err != nil {
+		log.Println("Set API key first.")
+	} else {
+		_ = json.Unmarshal(content, &userSettings)
+	}
+	userApiToken = userSettings["apiToken"]
+	userDownloadPath = userSettings["downloadPath"]
+	return nil
 }
 
 func saveApiToken(apiToken string) bool {
@@ -103,94 +123,6 @@ func saveDownloadPath(downloadPath string) bool {
 	}
 
 	return true
-}
-
-func getUserTorrents(url string) map[string]DebridDownload {
-	client := &http.Client{}
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", userApiToken))
-
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = json.Unmarshal(body, &userDownloads)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, torrentItem := range userDownloads {
-		downloadMap[torrentItem.Filename] = torrentItem
-	}
-
-	return downloadMap
-}
-
-func match(filename, query string) bool {
-	return strings.Contains(strings.ToLower(filename), strings.ToLower(query))
-}
-
-func renderList(g *gocui.Gui) error {
-	v, err := g.View("torrents")
-	if err != nil {
-		return err
-	}
-	v.Clear()
-	for _, torrentItem := range userDownloads {
-		if searchQuery == "" || match(torrentItem.Filename, searchQuery) {
-			fmt.Fprintln(v, torrentItem.Filename)
-		}
-	}
-	return nil
-}
-
-func searchKeyPress(g *gocui.Gui, v *gocui.View) error {
-	searchQuery = strings.TrimSpace(v.Buffer())
-	renderList(g)
-	return nil
-}
-
-func downloadSelected(g *gocui.Gui, v *gocui.View) error {
-	_, cy := v.Cursor()
-	line, err := v.Line(cy)
-	if err != nil {
-		return err
-	}
-	downloadItem := downloadMap[line]
-	v, _ = g.View("info")
-	now := time.Now().Format("02 Jan 2006 15:04:00")
-
-	fmt.Fprint(v, fmt.Sprintf("[%s] Downloading %s to %s", now, downloadItem.Filename, userDownloadPath))
-	go func(torrentItem DebridDownload) {
-		if downloadFile(torrentItem) {
-			fmt.Fprint(v, fmt.Sprintf("Downloaded %s to %s", torrentItem.Filename, userDownloadPath))
-		}
-	}(downloadItem)
-	return nil
-}
-
-func copyDownloadLink(g *gocui.Gui, v *gocui.View) error {
-	_, cy := v.Cursor()
-	line, err := v.Line(cy)
-	if err != nil {
-		return err
-	}
-	selectedItem := downloadMap[line]
-	err = clipboard.WriteAll(selectedItem.Download)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return nil
 }
 
 func setDownloadPath(g *gocui.Gui, v *gocui.View) error {
@@ -253,6 +185,91 @@ func setApiToken(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
 
+// TORRENTS
+
+func getUserTorrents() map[string]DebridDownload {
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", downloadsURL, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", userApiToken))
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = json.Unmarshal(body, &userDownloads)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, torrentItem := range userDownloads {
+		downloadMap[torrentItem.Filename] = torrentItem
+	}
+
+	return downloadMap
+}
+
+// UTILS
+func match(filename, query string) bool {
+	return strings.Contains(strings.ToLower(filename), strings.ToLower(query))
+}
+
+func renderList(g *gocui.Gui) error {
+	v, err := g.View("torrents")
+	if err != nil {
+		return err
+	}
+	v.Clear()
+	for _, torrentItem := range userDownloads {
+		if searchQuery == "" || match(torrentItem.Filename, searchQuery) {
+			fmt.Fprintln(v, torrentItem.Filename)
+		}
+	}
+	return nil
+}
+
+func getCurrentLine(v *gocui.View) (string, error) {
+	_, cy := v.Cursor()
+	line, err := v.Line(cy)
+	return line, err
+}
+
+func generateDetailsString(torrentItem DebridDownload) string {
+	detailsString := fmt.Sprintf(
+		"ID: %s\nFilename: %s\nMIME Type: %s\nFilesize: %d bytes\nLink: %s\nHost: %s\nHost Icon: %s\nChunks: %d\nDownload: %s\nStreamable: %d\nGenerated: %s\n",
+		torrentItem.Id,
+		torrentItem.Filename,
+		torrentItem.MimeType,
+		torrentItem.Filesize,
+		torrentItem.Link,
+		torrentItem.Host,
+		torrentItem.HostIcon,
+		torrentItem.Chunks,
+		torrentItem.Download,
+		torrentItem.Streamable,
+		torrentItem.Generated,
+	)
+	return detailsString
+}
+
+// HANDLERS
+
+func searchKeyPress(g *gocui.Gui, v *gocui.View) error {
+	searchQuery = strings.TrimSpace(v.Buffer())
+	renderList(g)
+	g.SetCurrentView("torrents")
+	return nil
+}
+
 func cursorDown(g *gocui.Gui, v *gocui.View) error {
 	cx, cy := v.Cursor()
 	if err := v.SetCursor(cx, cy+1); err != nil {
@@ -274,40 +291,67 @@ func cursorUp(g *gocui.Gui, v *gocui.View) error {
 	return updateDetails(g, v)
 }
 
+func quit(g *gocui.Gui, v *gocui.View) error {
+	return gocui.ErrQuit
+}
+
+// ACTIONS
+
+func downloadSelected(g *gocui.Gui, v *gocui.View) error {
+	_, cy := v.Cursor()
+	line, err := v.Line(cy)
+	if err != nil {
+		return err
+	}
+	downloadItem := downloadMap[line]
+	v, _ = g.View("info")
+	now := time.Now().Format("02 Jan 2006 15:04:00")
+
+	fmt.Fprint(v, fmt.Sprintf("[%s] Downloading %s to %s", now, downloadItem.Filename, userDownloadPath))
+	go func(torrentItem DebridDownload) {
+		if downloadFile(torrentItem) {
+			fmt.Fprint(v, fmt.Sprintf("Downloaded %s to %s", torrentItem.Filename, userDownloadPath))
+		}
+	}(downloadItem)
+	return nil
+}
+
+func copyDownloadLink(g *gocui.Gui, v *gocui.View) error {
+	_, cy := v.Cursor()
+	line, err := v.Line(cy)
+	if err != nil {
+		return err
+	}
+	selectedItem := downloadMap[line]
+	err = clipboard.WriteAll(selectedItem.Download)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return nil
+}
+
 func downloadFile(torrentItem DebridDownload) bool {
 	out, err := os.Create(fmt.Sprintf("%s%s", userDownloadPath, torrentItem.Filename))
 	defer out.Close()
 
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 	resp, err := http.Get(torrentItem.Download)
 	defer resp.Body.Close()
 	n, err := io.Copy(out, resp.Body)
 	if err == nil {
-		fmt.Println(n)
+		log.Println(n)
 		return true
 	}
 	return false
 }
 
-func generateDetailsString(torrentItem DebridDownload) string {
-	detailsString := fmt.Sprintf(
-		"ID: %s\nFilename: %s\nMIME Type: %s\nFilesize: %d bytes\nLink: %s\nHost: %s\nHost Icon: %s\nChunks: %d\nDownload: %s\nStreamable: %d\nGenerated: %s\n",
-		torrentItem.Id,
-		torrentItem.Filename,
-		torrentItem.MimeType,
-		torrentItem.Filesize,
-		torrentItem.Link,
-		torrentItem.Host,
-		torrentItem.HostIcon,
-		torrentItem.Chunks,
-		torrentItem.Download,
-		torrentItem.Streamable,
-		torrentItem.Generated,
-	)
-	return detailsString
+func focusSearchBar(g *gocui.Gui, v *gocui.View) error {
+	g.SetCurrentView("search")
+	return nil
 }
+
 func updateDetails(g *gocui.Gui, v *gocui.View) error {
 	_, cy := v.Cursor()
 	title, err := v.Line(cy)
@@ -332,27 +376,16 @@ func updateDetails(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
 
-func selectLine(g *gocui.Gui, v *gocui.View) error {
-	_, cy := v.Cursor()
-	line, err := v.Line(cy)
-	if err != nil {
-		return err
-	}
-	log.Println("Selected:", downloadMap[line].Download)
-	return nil
-}
-
 func sendLinkToAPI(magnetLink string) error {
-	apiURL := "https://api.real-debrid.com/rest/1.0/torrents/addMagnet"
 	data := url.Values{}
 	data.Set("magnet", magnetLink)
 
-	req, err := http.NewRequest("POST", apiURL, strings.NewReader(data.Encode()))
+	req, err := http.NewRequest("POST", addMagnetURL, strings.NewReader(data.Encode()))
 	if err != nil {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("Authorization", "Bearer "+userApiToken)
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", userApiToken))
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -406,45 +439,61 @@ func addMagnetLink(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
 
-func showSearchBar(g *gocui.Gui, v *gocui.View) error {
-	maxX, maxY := g.Size()
-	if v, err := g.SetView("searchPopup", maxX/4, maxY/4, maxX*3/4, maxY/4+3); err != nil {
-		if err != gocui.ErrUnknownView {
-			return err
-		}
-		v.Title = "Search"
-		v.Editable = true
-		v.Wrap = false
-		v.Clear()
-		g.SetCurrentView("searchPopup")
+func deleteCurrentView(g *gocui.Gui, v *gocui.View) error {
+	currentView := g.CurrentView()
+	log.Println(currentView.Name())
+	if currentView == nil {
+		log.Println("Deleted view:", currentView.Name())
+		return nil // or log and return
 	}
 
-	if err := g.SetKeybinding("searchPopup", gocui.KeyEnter, gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
-		searchQuery = strings.TrimSpace(v.Buffer())
-		g.DeleteView("searchPopup")
+	log.Println(currentView.Name())
+	if currentView.Name() != "torrents" && currentView.Name() != "main" && currentView.Name() != "info" && currentView.Name() != "footer" && currentView.Name() != "search" {
+		g.DeleteView(currentView.Name())
 		g.SetCurrentView("torrents")
-		return renderList(g)
-	}); err != nil {
-		return err
-	}
-
-	if err := g.SetKeybinding("searchPopup", gocui.KeyEsc, gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
-		g.DeleteView("searchPopup")
-		g.SetCurrentView("torrents")
-		return nil
-	}); err != nil {
-		return err
 	}
 
 	return nil
 }
+
+func showControls(g *gocui.Gui, v *gocui.View) error {
+	maxX, maxY := g.Size()
+	width := 30
+	height := 10
+
+	x0 := (maxX - width) / 2
+	y0 := (maxY - height) / 2
+	x1 := x0 + width
+	y1 := y0 + height
+
+	if v, err := g.SetView("controls", x0, y0, x1, y1); err != nil {
+		if err != gocui.ErrUnknownView {
+			return err
+		}
+		v.Title = "Controls"
+		v.Editable = false
+		v.Wrap = false
+		v.Frame = true
+		v.Clear()
+		controlsString := "TAB: Switch\n↑↓: Navigate\nENTER: Download\n/: Search\n^A: Add Magnet\n^C: Copy Link\n^P: Set Path\n^X: Set API Key\n^Q: Quit"
+		fmt.Fprint(v, controlsString)
+		g.SetCurrentView("controls")
+	}
+
+	return nil
+}
+
+// BINDINGS
 
 func keybindings(g *gocui.Gui) error {
 	if err := g.SetKeybinding("torrents", gocui.KeyArrowDown, gocui.ModNone, cursorDown); err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", '/', gocui.ModNone, showSearchBar); err != nil {
+	if err := g.SetKeybinding("controls", 'q', gocui.ModNone, deleteCurrentView); err != nil {
+		return err
+	}
+	if err := g.SetKeybinding("", '/', gocui.ModNone, focusSearchBar); err != nil {
 		return err
 	}
 	if err := g.SetKeybinding("torrents", gocui.KeyArrowUp, gocui.ModNone, cursorUp); err != nil {
@@ -460,6 +509,9 @@ func keybindings(g *gocui.Gui) error {
 		return err
 	}
 	if err := g.SetKeybinding("", gocui.KeyTab, gocui.ModNone, nextView); err != nil {
+		return err
+	}
+	if err := g.SetKeybinding("", '?', gocui.ModNone, showControls); err != nil {
 		return err
 	}
 	if err := g.SetKeybinding("search", gocui.KeyEnter, gocui.ModNone, searchKeyPress); err != nil {
@@ -485,6 +537,8 @@ func keybindings(g *gocui.Gui) error {
 	}
 	return nil
 }
+
+// LAYOUT
 
 func layout(g *gocui.Gui) error {
 	maxX, maxY := g.Size()
@@ -546,27 +600,20 @@ func layout(g *gocui.Gui) error {
 		}
 		footerView.Frame = true
 		footerView.Wrap = true
-		footerView.Title = "Shortcuts"
+		footerView.Title = ""
 		fmt.Fprintln(footerView,
-			"TAB: Switch | ↑↓: Navigate | ENTER: Download | Ctrl+A: Add Magnet | Ctrl+C: Copy Link | Ctrl+P: Set Path | Ctrl+X: Set API Key | Ctrl+Q: Quit",
+			"?: Show shortcuts",
+			// "TAB: Switch | ↑↓: Navigate | ENTER: Download | /: Search | ^A: Add Magnet | ^C: Copy Link | ^P: Set Path | ^X: Set API Key | ^Q: Quit",
 		)
 	}
 
 	return nil
 }
 
-func quit(g *gocui.Gui, v *gocui.View) error {
-	return gocui.ErrQuit
-}
-func getCurrentLine(v *gocui.View) (string, error) {
-	_, cy := v.Cursor()
-	line, err := v.Line(cy)
-	return line, err
-}
-
 func main() {
+	log.Println("Starting LazyDebrid...")
 	loadUserSettings()
-	getUserTorrents("https://api.real-debrid.com/rest/1.0/downloads?page=1&limit=5000&page=1")
+	getUserTorrents()
 	g, err := gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
 		log.Panicln(err)
