@@ -31,6 +31,7 @@ const (
 	downloadsURL = "https://api.real-debrid.com/rest/1.0/downloads?page=1&limit=5000"
 	addMagnetURL = "https://api.real-debrid.com/rest/1.0/torrents/addMagnet"
 	statusURL    = "https://api.real-debrid.com/rest/1.0/torrents/info/"
+	deleteURL    = "https://api.real-debrid.com/rest/1.0/torrents/delete/"
 	configFile   = "lazyDebrid.json"
 )
 
@@ -354,11 +355,16 @@ func renderList(g *gocui.Gui) error {
 		return err
 	}
 	v.Clear()
+	v.SetCursor(0, 0) // Reset cursor position
+
 	for _, torrentItem := range userDownloads {
 		if searchQuery == "" || match(torrentItem.Filename, searchQuery) {
 			fmt.Fprintln(v, torrentItem.Filename)
 		}
 	}
+
+	updateDetails(g, v)
+
 	return nil
 }
 
@@ -370,18 +376,14 @@ func getCurrentLine(v *gocui.View) (string, error) {
 
 func generateDetailsString(torrentItem DebridDownload) string {
 	detailsString := fmt.Sprintf(
-		"ID: %s\nFilename: %s\nMIME Type: %s\nFilesize: %d bytes\nLink: %s\nHost: %s\nHost Icon: %s\nChunks: %d\nDownload: %s\nStreamable: %d\nGenerated: %s\n",
+		"ID: %s\nFilename: %s\nMIME Type: %s\nFilesize: %d bytes\nLink: %s\nDownload: %s\nStreamable: %d",
 		torrentItem.Id,
 		torrentItem.Filename,
 		torrentItem.MimeType,
 		torrentItem.Filesize,
 		torrentItem.Link,
-		torrentItem.Host,
-		torrentItem.HostIcon,
-		torrentItem.Chunks,
 		torrentItem.Download,
 		torrentItem.Streamable,
-		torrentItem.Generated,
 	)
 	return detailsString
 }
@@ -403,6 +405,7 @@ func cursorDown(g *gocui.Gui, v *gocui.View) error {
 			return err
 		}
 	}
+
 	return updateDetails(g, v)
 }
 
@@ -471,13 +474,7 @@ func deleteTorrent(g *gocui.Gui, v *gocui.View) error {
 	if err != nil {
 		return err
 	}
-	item, exists := downloadMap[line]
-	if !exists {
-		return fmt.Errorf("item not found in map")
-	}
-
-	log.Println(item)
-	deleteURL := fmt.Sprintf("https://api.real-debrid.com/rest/1.0/torrents/delete/%s", item.Id)
+	deleteURL := fmt.Sprintf("https://api.real-debrid.com/rest/1.0/torrents/delete/%s", line)
 	req, err := http.NewRequest("DELETE", deleteURL, nil)
 	if err != nil {
 		return err
@@ -561,8 +558,8 @@ func focusSearchBar(g *gocui.Gui, v *gocui.View) error {
 
 func updateDetails(g *gocui.Gui, v *gocui.View) error {
 	_, cy := v.Cursor()
-	title, err := v.Line(cy)
-	if err != nil || title == "" {
+	line, err := v.Line(cy)
+	if err != nil || strings.TrimSpace(line) == "" {
 		return nil
 	}
 
@@ -572,14 +569,13 @@ func updateDetails(g *gocui.Gui, v *gocui.View) error {
 	}
 	mainView.Clear()
 
-	torrentItem, ok := downloadMap[title]
+	torrentItem, ok := downloadMap[strings.TrimSpace(line)]
 	if !ok {
 		fmt.Fprint(mainView, "No details found.")
 		return nil
 	}
 
-	detailsString := generateDetailsString(torrentItem)
-	fmt.Fprint(mainView, detailsString)
+	fmt.Fprint(mainView, generateDetailsString(torrentItem))
 	return nil
 }
 
@@ -654,7 +650,6 @@ func deleteCurrentView(g *gocui.Gui, v *gocui.View) error {
 		return nil
 	}
 
-	log.Println(currentView.Name())
 	if currentView.Name() != "torrents" && currentView.Name() != "details" && currentView.Name() != "info" && currentView.Name() != "footer" && currentView.Name() != "activeTorrents" && currentView.Name() != "search" {
 		g.DeleteView(currentView.Name())
 		g.SetCurrentView("torrents")
@@ -699,10 +694,14 @@ func keybindings(g *gocui.Gui) error {
 		}
 	}
 
+	bind("activeTorrents", 'd', gocui.ModNone, deleteTorrent)
 	bind("activeTorrents", 's', gocui.ModNone, getTorrentStatus)
-	bind("torrents", gocui.KeyArrowDown, gocui.ModNone, cursorDown)
-	bind("torrents", 'd', gocui.ModNone, deleteTorrent)
-	bind("torrents", gocui.KeyArrowUp, gocui.ModNone, cursorUp)
+	bind("activeTorrents", 'j', gocui.ModNone, cursorDown)
+	bind("activeTorrents", 'k', gocui.ModNone, cursorUp)
+	bind("torrents", 'j', gocui.ModNone, cursorDown)
+	bind("torrents", 'k', gocui.ModNone, cursorUp)
+	bind("", gocui.KeyArrowDown, gocui.ModNone, cursorDown)
+	bind("", gocui.KeyArrowUp, gocui.ModNone, cursorUp)
 	bind("torrents", gocui.KeyEnter, gocui.ModNone, downloadSelected)
 	bind("torrents", '/', gocui.ModNone, focusSearchBar)
 	bind("details", '/', gocui.ModNone, focusSearchBar)
@@ -758,6 +757,7 @@ func layout(g *gocui.Gui) error {
 		}
 		torrentsView.SetCursor(0, 0)
 		g.SetCurrentView("torrents")
+		updateDetails(g, torrentsView)
 	}
 
 	if mainView, err := g.SetView("details", splitX+1, detailsTop, maxX-1, detailsBottom); err != nil && err != gocui.ErrUnknownView {
@@ -765,10 +765,9 @@ func layout(g *gocui.Gui) error {
 	} else if err == nil {
 		mainView.Title = "Torrent Details"
 		mainView.Wrap = true
-		if len(userDownloads) > 0 {
-			first := userDownloads[0]
-			mainView.Clear()
-			fmt.Fprint(mainView, generateDetailsString(first))
+
+		if torrentsView, err := g.View("torrents"); err == nil {
+			updateDetails(g, torrentsView)
 		}
 	}
 
