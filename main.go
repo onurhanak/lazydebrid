@@ -28,11 +28,12 @@ func init() {
 }
 
 const (
-	downloadsURL = "https://api.real-debrid.com/rest/1.0/downloads?page=1&limit=5000"
-	addMagnetURL = "https://api.real-debrid.com/rest/1.0/torrents/addMagnet"
-	statusURL    = "https://api.real-debrid.com/rest/1.0/torrents/info/"
-	deleteURL    = "https://api.real-debrid.com/rest/1.0/torrents/delete/"
-	configFile   = "lazyDebrid.json"
+	downloadsURL   = "https://api.real-debrid.com/rest/1.0/downloads?page=1&limit=5000"
+	addMagnetURL   = "https://api.real-debrid.com/rest/1.0/torrents/addMagnet"
+	statusURL      = "https://api.real-debrid.com/rest/1.0/torrents/info/"
+	deleteURL      = "https://api.real-debrid.com/rest/1.0/torrents/delete/"
+	selectFilesURL = "https://api.real-debrid.com/rest/1.0/torrents/selectFiles/"
+	configFile     = "lazyDebrid.json"
 )
 
 var (
@@ -464,6 +465,85 @@ func getTorrentStatus(g *gocui.Gui, v *gocui.View) error {
 		"[%s]\nStatus for %s:\n  Status: %s\n  Progress: %d%%\n  Added: %s\n  Files: %d\n\n",
 		now, info.Filename, info.Status, info.Progress, info.Added, len(info.Files),
 	)
+
+	showFileSelector(g, info.Files)
+	return nil
+}
+
+var currentFiles []TorrentFile
+var selectedFiles map[int]bool = make(map[int]bool)
+
+func confirmFileSelection(g *gocui.Gui, v *gocui.View) error {
+	var selectedIDs []string
+	for i := range selectedFiles {
+		selectedIDs = append(selectedIDs, fmt.Sprintf("%d", currentFiles[i].ID))
+	}
+
+	log.Printf("Selected file IDs: %v\n", selectedIDs)
+
+	g.DeleteView("fileSelect")
+	g.SetCurrentView("torrents")
+	return nil
+}
+
+//func toggleFileSelection(g *gocui.Gui, v *gocui.View) error {
+//	_, cy := v.Cursor()
+//	idx := cy
+//	if idx >= 0 && idx < len(currentFiles) {
+//		if selectedFiles[idx] {
+//			delete(selectedFiles, idx)
+//		} else {
+//			selectedFiles[idx] = true
+//		}
+//	}
+//
+//	v.Clear()
+//	for i, file := range currentFiles {
+//		prefix := " "
+//		if selectedFiles[i] {
+//			prefix = "[x]"
+//		} else {
+//			prefix = "[ ]"
+//		}
+//		fmt.Fprintf(v, "%s %s (%d bytes)\n", prefix, file.Path, file.Bytes)
+//	}
+//	v.SetCursor(0, cy)
+//	return nil
+//}
+//
+
+func showFileSelector(g *gocui.Gui, files []TorrentFile) error {
+	maxX, maxY := g.Size()
+	x0 := maxX / 4
+	y0 := maxY / 4
+	x1 := x0 + maxX/2
+	y1 := y0 + maxY/2
+
+	currentFiles = files
+	selectedFiles = make(map[int]bool)
+
+	if v, err := g.SetView("fileSelect", x0, y0, x1, y1); err != nil {
+		if err != gocui.ErrUnknownView {
+			return err
+		}
+		v.Title = "Select Files (Space to toggle, Enter to confirm)"
+		v.Highlight = true
+		v.SelFgColor = gocui.ColorGreen
+		v.Wrap = false
+
+		for _, file := range files {
+			fmt.Fprintf(v, "%s (%d bytes)\n", file.Path, file.Bytes)
+		}
+
+		if _, err := g.SetCurrentView("fileSelect"); err != nil {
+			return err
+		}
+	}
+
+	g.SetKeybinding("fileSelect", 'j', gocui.ModNone, cursorDown)
+	g.SetKeybinding("fileSelect", 'k', gocui.ModNone, cursorUp)
+	// g.SetKeybinding("fileSelect", ' ', gocui.ModNone, toggleFileSelection)
+	g.SetKeybinding("fileSelect", gocui.KeyEnter, gocui.ModNone, confirmFileSelection)
 
 	return nil
 }
