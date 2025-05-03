@@ -33,7 +33,12 @@ var (
 
 func DownloadFile(torrentItem models.DebridDownload) bool {
 	out, err := os.Create(fmt.Sprintf("%s%s", config.UserDownloadPath, torrentItem.Filename))
-	defer out.Close()
+	defer func() {
+		err := out.Close()
+		if err != nil {
+			fmt.Println("Cannot create file for download.")
+		}
+	}()
 
 	if err != nil {
 		log.Println(err)
@@ -42,7 +47,13 @@ func DownloadFile(torrentItem models.DebridDownload) bool {
 	if err != nil {
 		log.Println(err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Println("Cannot read response body.")
+		}
+	}()
+
 	n, err := io.Copy(out, resp.Body)
 	if err == nil {
 		log.Println(n)
@@ -69,28 +80,44 @@ func GetTorrentStatus(g *gocui.Gui, v *gocui.View) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Println("Cannot read response body.")
+		}
+	}()
 
 	infoView, _ := g.View("info")
 	now := time.Now().Format("02 Jan 2006 15:04:00")
 
 	if resp.StatusCode != http.StatusOK {
 		msg, _ := io.ReadAll(resp.Body)
-		fmt.Fprintf(infoView, "[%s] Failed to fetch status: %s\n", now, msg)
+		_, err := fmt.Fprintf(infoView, "[%s] Failed to fetch status: %s\n", now, msg)
+		if err != nil {
+			log.Printf("[%s] Failed to fetch status: %s", now, msg)
+		}
 		return nil
 	}
 
 	var info models.TorrentStatus
 	if err := json.NewDecoder(resp.Body).Decode(&info); err != nil {
-		fmt.Fprintf(infoView, "[%s] Failed to parse status\n", now)
+		log.Printf("Failed to parse status.")
+		_, err := fmt.Fprintf(infoView, "[%s] Failed to parse status\n", now)
+		if err != nil {
+			log.Println("Cannot write to infoView.")
+			return err
+		}
 		return err
 	}
 
-	fmt.Fprintf(infoView,
+	_, err = fmt.Fprintf(infoView,
 		"[%s]\nStatus for %s:\n  Status: %s\n  Progress: %d%%\n  Added: %s\n  Files: %d\n\n",
 		now, info.Filename, info.Status, info.Progress, info.Added, len(info.Files),
 	)
 
+	if err != nil {
+		return err
+	}
 	return nil
 }
 func DeleteTorrent(g *gocui.Gui, v *gocui.View) error {
@@ -110,15 +137,26 @@ func DeleteTorrent(g *gocui.Gui, v *gocui.View) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			log.Println("Cannot read response body.")
+		}
+	}()
 
 	infoView, _ := g.View("info")
 	now := time.Now().Format("02 Jan 2006 15:04:00")
 	if resp.StatusCode == http.StatusNoContent {
-		fmt.Fprintf(infoView, "[%s] Deleted torrent: %s", now, line)
+		_, err := fmt.Fprintf(infoView, "[%s] Deleted torrent: %s", now, line)
+		if err != nil {
+			return err
+		}
 	} else {
 		msg, _ := io.ReadAll(resp.Body)
-		fmt.Fprintf(infoView, "[%s] Failed to delete %s: %s", now, line, msg)
+		_, err := fmt.Fprintf(infoView, "[%s] Failed to delete %s: %s", now, line, msg)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -139,7 +177,12 @@ func AddFilesToDebrid(downloadID string) bool {
 	if err != nil {
 		log.Println(err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			log.Println(err)
+		}
+	}()
 
 	log.Printf("Status code: %d", resp.StatusCode)
 	if resp.StatusCode != 204 && resp.StatusCode != 202 {
@@ -167,7 +210,10 @@ func SendLinkToAPI(magnetLink string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		log.Println(err)
+	}()
 
 	if resp.StatusCode != http.StatusCreated {
 		msg, _ := io.ReadAll(resp.Body)
@@ -186,7 +232,7 @@ func SendLinkToAPI(magnetLink string) (string, error) {
 	if success {
 		return result.ID, nil
 	}
-	return "", fmt.Errorf("Could not add files")
+	return "", fmt.Errorf("could not add files")
 }
 
 func GetUserTorrents() map[string]models.DebridDownload {
@@ -202,7 +248,12 @@ func GetUserTorrents() map[string]models.DebridDownload {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			log.Println(err)
+		}
+	}()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

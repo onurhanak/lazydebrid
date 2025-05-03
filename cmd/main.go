@@ -20,9 +20,13 @@ func init() {
 	log.SetOutput(logFile)
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 }
+
 func main() {
 	log.Println("Starting LazyDebrid...")
-	config.LoadUserSettings()
+	err := config.LoadUserSettings()
+	if err != nil {
+		log.Fatalln("Could not not load user settings, bailing.")
+	}
 	actions.GetUserTorrents()
 	g, err := gocui.NewGui(gocui.OutputNormal)
 	if err != nil {

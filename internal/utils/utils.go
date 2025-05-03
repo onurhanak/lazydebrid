@@ -20,11 +20,17 @@ func RenderList(g *gocui.Gui) error {
 		return err
 	}
 	v.Clear()
-	v.SetCursor(0, 0)
+	err = v.SetCursor(0, 0)
+	if err != nil {
+		return err
+	}
 
 	for _, torrentItem := range actions.UserDownloads {
 		if config.SearchQuery == "" || Match(torrentItem.Filename, config.SearchQuery) {
-			fmt.Fprintln(v, torrentItem.Filename)
+			_, err := fmt.Fprintln(v, torrentItem.Filename)
+			if err != nil {
+				return err
+			}
 		}
 	}
 

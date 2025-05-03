@@ -29,12 +29,15 @@ func HandleAddMagnetLink(g *gocui.Gui, v *gocui.View) error {
 		return err
 	}
 
-	v, _ = g.View("addMagnet")
-	v.Title = "Add Magnet Link"
-	v.Wrap = true
-	v.Editable = true
-	v.Clear()
-	g.SetCurrentView("addMagnet")
+	addView, _ := g.View("addMagnet")
+	addView.Title = "Add Magnet Link"
+	addView.Wrap = true
+	addView.Editable = true
+	addView.Clear()
+	_, err = g.SetCurrentView("addMagnet")
+	if err != nil {
+		return err
+	}
 
 	if err := g.SetKeybinding("addMagnet", gocui.KeyEnter, gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
 		magnetLink := strings.TrimSpace(v.Buffer())
@@ -42,29 +45,52 @@ func HandleAddMagnetLink(g *gocui.Gui, v *gocui.View) error {
 		now := time.Now().Format("02 Jan 2006 15:04:00")
 
 		if magnetLink == "" {
-			fmt.Fprintf(infoView, "[%s] Error: Empty magnet link\n", now)
+			_, err = fmt.Fprintf(infoView, "[%s] Error: Empty magnet link\n", now)
+			if err != nil {
+				log.Println(err)
+			}
 			return nil
 		}
 
 		downloadID, err := actions.SendLinkToAPI(magnetLink)
 		if err != nil {
 			log.Println(err)
-			fmt.Fprintf(infoView, "[%s] Failed to add magnet: %v\n", now, err)
-			return nil
+			_, err = fmt.Fprintf(infoView, "[%s] Failed to add magnet: %v\n", now, err)
+			if err != nil {
+				log.Println(err)
+				return err
+			}
+			return err
 		}
-		fmt.Fprintf(infoView, "[%s] Magnet added: %s\n", now, downloadID)
+		_, err = fmt.Fprintf(infoView, "[%s] Magnet added: %s\n", now, downloadID)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
 
 		success := actions.AddFilesToDebrid(downloadID)
 
 		if success {
-			fmt.Fprintf(infoView, "[%s] All files selected for download: %s\n", now, downloadID)
+			_, err = fmt.Fprintf(infoView, "[%s] All files selected for download: %s\n", now, downloadID)
+			if err != nil {
+				return err
+			}
 		} else {
-			fmt.Fprintf(infoView, "[%s] Failed to select files for %s\n", now, downloadID)
+			_, err := fmt.Fprintf(infoView, "[%s] Failed to select files for %s\n", now, downloadID)
+			if err != nil {
+				return err
+			}
 			log.Printf("[%s] Failed to select files for %s\n", now, downloadID)
 		}
 
-		g.DeleteView("addMagnet")
-		g.SetCurrentView("torrents")
+		err = g.DeleteView("addMagnet")
+		if err != nil {
+			return err
+		}
+		_, err = g.SetCurrentView("torrents")
+		if err != nil {
+			return err
+		}
 		return nil
 	}); err != nil {
 		if !strings.Contains(err.Error(), "duplicate") {
@@ -74,6 +100,7 @@ func HandleAddMagnetLink(g *gocui.Gui, v *gocui.View) error {
 
 	return nil
 }
+
 func UpdateDetails(g *gocui.Gui, v *gocui.View) error {
 	_, cy := v.Cursor()
 	line, err := v.Line(cy)
@@ -89,11 +116,17 @@ func UpdateDetails(g *gocui.Gui, v *gocui.View) error {
 
 	torrentItem, ok := actions.DownloadMap[strings.TrimSpace(line)]
 	if !ok {
-		fmt.Fprint(mainView, "No details found.")
+		_, err = fmt.Fprint(mainView, "No details found.")
+		if err != nil {
+			return err
+		}
 		return nil
 	}
 
-	fmt.Fprint(mainView, utils.GenerateDetailsString(torrentItem))
+	_, err = fmt.Fprint(mainView, utils.GenerateDetailsString(torrentItem))
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -104,9 +137,15 @@ func SearchKeyPress(g *gocui.Gui, v *gocui.View) error {
 	}
 
 	torrentsView, _ := g.View("torrents")
-	UpdateDetails(g, torrentsView)
+	err := UpdateDetails(g, torrentsView)
+	if err != nil {
+		return err
+	}
 
-	g.SetCurrentView("torrents")
+	_, err = g.SetCurrentView("torrents")
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -133,7 +172,10 @@ func CursorUp(g *gocui.Gui, v *gocui.View) error {
 }
 
 func FocusSearchBar(g *gocui.Gui, v *gocui.View) error {
-	g.SetCurrentView("search")
+	_, err := g.SetCurrentView("search")
+	if err != nil {
+		return err
+	}
 	return nil
 }
 func Quit(g *gocui.Gui, v *gocui.View) error {
@@ -148,8 +190,14 @@ func DeleteCurrentView(g *gocui.Gui, v *gocui.View) error {
 	}
 
 	if currentView.Name() != "torrents" && currentView.Name() != "details" && currentView.Name() != "info" && currentView.Name() != "footer" && currentView.Name() != "activeTorrents" && currentView.Name() != "search" {
-		g.DeleteView(currentView.Name())
-		g.SetCurrentView("torrents")
+		err := g.DeleteView(currentView.Name())
+		if err != nil {
+			return err
+		}
+		_, err = g.SetCurrentView("torrents")
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -175,8 +223,14 @@ func ShowControls(g *gocui.Gui, v *gocui.View) error {
 		v.Frame = true
 		v.Clear()
 		controlsString := "TAB: Switch\n↑↓: Navigate\nENTER: Download\n/: Search\n^A: Add Magnet\n^C: Copy Link\n^P: Set Path\n^X: Set API Key\n^Q: Quit"
-		fmt.Fprint(v, controlsString)
-		g.SetCurrentView("controls")
+		_, err = fmt.Fprint(v, controlsString)
+		if err != nil {
+			return err
+		}
+		_, err = g.SetCurrentView("controls")
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -192,10 +246,16 @@ func DownloadSelected(g *gocui.Gui, v *gocui.View) error {
 	v, _ = g.View("info")
 	now := time.Now().Format("02 Jan 2006 15:04:00")
 
-	fmt.Fprint(v, fmt.Sprintf("[%s] Downloading %s to %s", now, downloadItem.Filename, config.UserDownloadPath))
+	_, err = fmt.Fprintf(v, "[%s] Downloading %s to %s", now, downloadItem.Filename, config.UserDownloadPath)
+	if err != nil {
+		return err
+	}
 	go func(torrentItem models.DebridDownload) {
 		if actions.DownloadFile(torrentItem) {
-			fmt.Fprint(v, fmt.Sprintf("Downloaded %s to %s", torrentItem.Filename, config.UserDownloadPath))
+			_, err = fmt.Fprintf(v, "Downloaded %s to %s", torrentItem.Filename, config.UserDownloadPath)
+			if err != nil {
+				log.Println(err)
+			}
 		}
 	}(downloadItem)
 	return nil
@@ -246,14 +306,32 @@ func NextView(g *gocui.Gui, v *gocui.View) error {
 
 	keysView, _ := g.View("footer")
 	keysView.Clear()
-	if name == "torrents" {
-		fmt.Fprint(keysView, views.TorrentsKeys)
-	} else if name == "search" {
-		fmt.Fprint(keysView, views.SearchKeys)
-	} else if name == "activeTorrents" {
-		fmt.Fprint(keysView, views.ActiveDownloadsKeys)
-	} else if name == "details" {
-		fmt.Fprint(keysView, "")
+	switch name {
+
+	case "torrents":
+
+		_, err = fmt.Fprint(keysView, views.TorrentsKeys)
+		if err != nil {
+			return err
+		}
+	case "search":
+
+		_, err = fmt.Fprint(keysView, views.SearchKeys)
+		if err != nil {
+			return err
+		}
+	case "activeTorrents":
+
+		_, err = fmt.Fprint(keysView, views.ActiveDownloadsKeys)
+		if err != nil {
+			return err
+		}
+	case "details":
+
+		_, err = fmt.Fprint(keysView, "")
+		if err != nil {
+			return err
+		}
 	}
 
 	return err

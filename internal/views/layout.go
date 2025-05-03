@@ -46,10 +46,19 @@ func Layout(g *gocui.Gui) error {
 		torrentsView.SelFgColor = gocui.ColorGreen
 
 		for _, item := range actions.UserDownloads {
-			fmt.Fprintln(torrentsView, item.Filename)
+			_, err := fmt.Fprintln(torrentsView, item.Filename)
+			if err != nil {
+				return err
+			}
 		}
-		torrentsView.SetCursor(0, 0)
-		g.SetCurrentView("torrents")
+		err = torrentsView.SetCursor(0, 0)
+		if err != nil {
+			return err
+		}
+		_, err = g.SetCurrentView("torrents")
+		if err != nil {
+			return err
+		}
 	}
 
 	if mainView, err := g.SetView("details", splitX+1, detailsTop, maxX-1, detailsBottom); err != nil && err != gocui.ErrUnknownView {
@@ -69,9 +78,15 @@ func Layout(g *gocui.Gui) error {
 		activeTorrentsView.SelFgColor = gocui.ColorGreen
 		activeTorrentsView.Clear()
 		for _, item := range actions.ActiveDownloads {
-			fmt.Fprintln(activeTorrentsView, item.ID)
+			_, err = fmt.Fprintln(activeTorrentsView, item.ID)
+			if err != nil {
+				return err
+			}
 		}
-		activeTorrentsView.SetCursor(0, 0)
+		err = activeTorrentsView.SetCursor(0, 0)
+		if err != nil {
+			return err
+		}
 	}
 
 	if infoView, err := g.SetView("info", splitX+1, infoTop, maxX-1, infoBottom); err != nil && err != gocui.ErrUnknownView {
@@ -89,7 +104,10 @@ func Layout(g *gocui.Gui) error {
 		footerView.Wrap = true
 		footerView.Title = ""
 
-		fmt.Fprint(footerView, MainKeys)
+		_, err = fmt.Fprint(footerView, MainKeys)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -116,17 +134,29 @@ func ShowModal(g *gocui.Gui, name, title string, content string, onSubmit func(s
 		} else {
 			v.Editable = false
 			v.Wrap = false
-			fmt.Fprint(v, content)
+			_, err = fmt.Fprint(v, content)
+			if err != nil {
+				return err
+			}
 		}
 		g.DeleteKeybindings(name)
 		_, _ = g.SetCurrentView(name)
-		g.SetKeybinding(name, gocui.KeyEnter, gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
+		err = g.SetKeybinding(name, gocui.KeyEnter, gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
 			input := strings.TrimSpace(v.Buffer())
-			g.DeleteView(name)
-			g.SetCurrentView("torrents")
+			err = g.DeleteView(name)
+			if err != nil {
+				return err
+			}
+			_, err = g.SetCurrentView("torrents")
+			if err != nil {
+				return err
+			}
 			onSubmit(input)
 			return nil
 		})
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
