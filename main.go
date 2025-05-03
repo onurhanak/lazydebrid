@@ -198,7 +198,7 @@ func showSetTokenModal(g *gocui.Gui, v *gocui.View) error {
 
 func showAddMagnetModal(g *gocui.Gui, v *gocui.View) error {
 	return showModal(g, "addMagnet", "Add Magnet Link", "", func(input string) {
-		_ = sendLinkToAPI(input)
+		_, _ = sendLinkToAPI(input)
 	})
 }
 
@@ -356,7 +356,7 @@ func renderList(g *gocui.Gui) error {
 		return err
 	}
 	v.Clear()
-	v.SetCursor(0, 0) // Reset cursor position
+	v.SetCursor(0, 0)
 
 	for _, torrentItem := range userDownloads {
 		if searchQuery == "" || match(torrentItem.Filename, searchQuery) {
@@ -465,85 +465,6 @@ func getTorrentStatus(g *gocui.Gui, v *gocui.View) error {
 		"[%s]\nStatus for %s:\n  Status: %s\n  Progress: %d%%\n  Added: %s\n  Files: %d\n\n",
 		now, info.Filename, info.Status, info.Progress, info.Added, len(info.Files),
 	)
-
-	showFileSelector(g, info.Files)
-	return nil
-}
-
-var currentFiles []TorrentFile
-var selectedFiles map[int]bool = make(map[int]bool)
-
-func confirmFileSelection(g *gocui.Gui, v *gocui.View) error {
-	var selectedIDs []string
-	for i := range selectedFiles {
-		selectedIDs = append(selectedIDs, fmt.Sprintf("%d", currentFiles[i].ID))
-	}
-
-	log.Printf("Selected file IDs: %v\n", selectedIDs)
-
-	g.DeleteView("fileSelect")
-	g.SetCurrentView("torrents")
-	return nil
-}
-
-//func toggleFileSelection(g *gocui.Gui, v *gocui.View) error {
-//	_, cy := v.Cursor()
-//	idx := cy
-//	if idx >= 0 && idx < len(currentFiles) {
-//		if selectedFiles[idx] {
-//			delete(selectedFiles, idx)
-//		} else {
-//			selectedFiles[idx] = true
-//		}
-//	}
-//
-//	v.Clear()
-//	for i, file := range currentFiles {
-//		prefix := " "
-//		if selectedFiles[i] {
-//			prefix = "[x]"
-//		} else {
-//			prefix = "[ ]"
-//		}
-//		fmt.Fprintf(v, "%s %s (%d bytes)\n", prefix, file.Path, file.Bytes)
-//	}
-//	v.SetCursor(0, cy)
-//	return nil
-//}
-//
-
-func showFileSelector(g *gocui.Gui, files []TorrentFile) error {
-	maxX, maxY := g.Size()
-	x0 := maxX / 4
-	y0 := maxY / 4
-	x1 := x0 + maxX/2
-	y1 := y0 + maxY/2
-
-	currentFiles = files
-	selectedFiles = make(map[int]bool)
-
-	if v, err := g.SetView("fileSelect", x0, y0, x1, y1); err != nil {
-		if err != gocui.ErrUnknownView {
-			return err
-		}
-		v.Title = "Select Files (Space to toggle, Enter to confirm)"
-		v.Highlight = true
-		v.SelFgColor = gocui.ColorGreen
-		v.Wrap = false
-
-		for _, file := range files {
-			fmt.Fprintf(v, "%s (%d bytes)\n", file.Path, file.Bytes)
-		}
-
-		if _, err := g.SetCurrentView("fileSelect"); err != nil {
-			return err
-		}
-	}
-
-	g.SetKeybinding("fileSelect", 'j', gocui.ModNone, cursorDown)
-	g.SetKeybinding("fileSelect", 'k', gocui.ModNone, cursorUp)
-	// g.SetKeybinding("fileSelect", ' ', gocui.ModNone, toggleFileSelection)
-	g.SetKeybinding("fileSelect", gocui.KeyEnter, gocui.ModNone, confirmFileSelection)
 
 	return nil
 }
@@ -659,13 +580,14 @@ func updateDetails(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
 
-func sendLinkToAPI(magnetLink string) error {
+func addFilesToDebrid(downloadID string) bool {
 	data := url.Values{}
-	data.Set("magnet", magnetLink)
+	data.Set("files", "all")
 
-	req, err := http.NewRequest("POST", addMagnetURL, strings.NewReader(data.Encode()))
+	selectFilesURL := fmt.Sprintf("https://api.real-debrid.com/rest/1.0/torrents/selectFiles/%s", downloadID)
+	req, err := http.NewRequest("POST", selectFilesURL, strings.NewReader(data.Encode()))
 	if err != nil {
-		return err
+		log.Println(err)
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", userApiToken))
@@ -673,51 +595,106 @@ func sendLinkToAPI(magnetLink string) error {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		log.Println(err)
+	}
+	defer resp.Body.Close()
+
+	log.Printf("Status code: %d", resp.StatusCode)
+	if resp.StatusCode != 204 && resp.StatusCode != 202 {
+		msg, _ := io.ReadAll(resp.Body)
+		log.Println(fmt.Errorf("HTTP %d: %s", resp.StatusCode, msg))
+		return false
+	}
+
+	return true
+}
+
+func sendLinkToAPI(magnetLink string) (string, error) {
+	data := url.Values{}
+	data.Set("magnet", magnetLink)
+
+	req, err := http.NewRequest("POST", addMagnetURL, strings.NewReader(data.Encode()))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", userApiToken))
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusCreated {
 		msg, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("HTTP %d: %s", resp.StatusCode, msg)
+		return "", fmt.Errorf("HTTP %d: %s", resp.StatusCode, msg)
 	}
 
 	var result ActiveDownload
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return fmt.Errorf("error decoding addMagnet response: %w", err)
+		return "", fmt.Errorf("error decoding addMagnet response: %w", err)
 	}
 
 	log.Printf("Magnet added. Torrent ID: %s", result.ID)
 	activeDownloads = append(activeDownloads, result)
+	success := addFilesToDebrid(result.ID)
 
-	return nil
+	if success {
+		return result.ID, nil
+	}
+	return "", fmt.Errorf("Could not add files")
 }
 
 func addMagnetLink(g *gocui.Gui, v *gocui.View) error {
 	g.Highlight = true
 	g.SelFgColor = gocui.ColorGreen
 	maxX, maxY := g.Size()
-	if v, err := g.SetView("addMagnet", maxX/4, maxY/4, maxX*3/4, maxY*3/4); err != nil {
-		if err != gocui.ErrUnknownView {
-			return err
-		}
-		v.Title = "Add Magnet Link"
-		v.Wrap = true
-		v.Editable = true
-		v.Clear()
-		if _, err := g.SetCurrentView("addMagnet"); err != nil {
-			return err
-		}
+	_, err := g.SetView("addMagnet", maxX/4, maxY/4, maxX*3/4, maxY*3/4)
+	if err != nil && err != gocui.ErrUnknownView {
+		return err
 	}
 
+	v, _ = g.View("addMagnet")
+	v.Title = "Add Magnet Link"
+	v.Wrap = true
+	v.Editable = true
+	v.Clear()
+	g.SetCurrentView("addMagnet")
+
 	if err := g.SetKeybinding("addMagnet", gocui.KeyEnter, gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
-		magnetLink := v.Buffer()
-		sendLinkToAPI(magnetLink)
+		magnetLink := strings.TrimSpace(v.Buffer())
+		infoView, _ := g.View("info")
+		now := time.Now().Format("02 Jan 2006 15:04:00")
+
+		if magnetLink == "" {
+			fmt.Fprintf(infoView, "[%s] Error: Empty magnet link\n", now)
+			return nil
+		}
+
+		downloadID, err := sendLinkToAPI(magnetLink)
+		if err != nil {
+			fmt.Fprintf(infoView, "[%s] Failed to add magnet: %v\n", now, err)
+			return nil
+		}
+		fmt.Fprintf(infoView, "[%s] Magnet added: %s\n", now, downloadID)
+
+		success := addFilesToDebrid(downloadID)
+
+		if success {
+			fmt.Fprintf(infoView, "[%s] All files selected for download: %s\n", now, downloadID)
+		} else {
+			fmt.Fprintf(infoView, "[%s] Failed to select files for %s\n", now, downloadID)
+		}
+
 		g.DeleteView("addMagnet")
 		g.SetCurrentView("torrents")
 		return nil
 	}); err != nil {
-		return err
+		if !strings.Contains(err.Error(), "duplicate") {
+			return err
+		}
 	}
 
 	return nil
@@ -788,7 +765,7 @@ func keybindings(g *gocui.Gui) error {
 	bind("search", gocui.KeyEnter, gocui.ModNone, searchKeyPress)
 	bind("", gocui.KeyCtrlC, gocui.ModNone, copyDownloadLink)
 	bind("", gocui.KeyCtrlD, gocui.ModNone, downloadSelected)
-	bind("", gocui.KeyCtrlA, gocui.ModNone, showAddMagnetModal)
+	bind("", gocui.KeyCtrlA, gocui.ModNone, addMagnetLink)
 	bind("", gocui.KeyCtrlP, gocui.ModNone, showSetPathModal)
 	bind("", gocui.KeyCtrlX, gocui.ModNone, showSetTokenModal)
 	bind("", gocui.KeyCtrlQ, gocui.ModNone, quit)
@@ -806,15 +783,15 @@ func layout(g *gocui.Gui) error {
 	infoHeight := (maxY - 3) / 4
 
 	detailsTop := 3
-	detailsBottom := detailsTop + infoHeight // SHORTER main
+	detailsBottom := detailsTop + infoHeight
 	g.Highlight = true
 	g.SelFgColor = gocui.ColorGreen
 
 	activeTop := detailsBottom + 1
-	activeBottom := activeTop + infoHeight // TALLER activeTorrents
+	activeBottom := activeTop + infoHeight
 
 	infoTop := activeBottom + 1
-	infoBottom := maxY - 4 // Info view to bottom
+	infoBottom := maxY - 4
 	if v, err := g.SetView("search", 0, 0, maxX-1, 2); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err

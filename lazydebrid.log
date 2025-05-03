@@ -343,3 +343,60 @@ Streamable: 1
 2025/05/03 08:56:12 main.go:890: Starting LazyDebrid...
 2025/05/03 08:56:15 main.go:690: Magnet added. Torrent ID: GMF7SJBEIVPLG
 2025/05/03 08:56:25 main.go:905: invalid point
+2025/05/03 09:12:03 main.go:849: Starting LazyDebrid...
+2025/05/03 09:12:12 main.go:638: Magnet added. Torrent ID: BCA424MJJNYC2
+2025/05/03 09:12:12 main.go:603: HTTP 404: {
+	"error": "unknown_ressource",
+	"error_code": 7
+}
+2025/05/03 09:13:24 main.go:850: Starting LazyDebrid...
+2025/05/03 09:13:30 main.go:639: Magnet added. Torrent ID: PB76XSYNZZLTU
+2025/05/03 09:13:30 main.go:604: HTTP 204: 
+2025/05/03 09:14:13 main.go:850: Starting LazyDebrid...
+2025/05/03 09:14:20 main.go:639: Magnet added. Torrent ID: RF6YCVYHTUD4E
+2025/05/03 09:14:40 main.go:850: Starting LazyDebrid...
+2025/05/03 09:14:44 main.go:639: Magnet added. Torrent ID: KU4A6NMQPP7FQ
+2025/05/03 09:16:08 main.go:851: Starting LazyDebrid...
+2025/05/03 09:16:12 main.go:640: Magnet added. Torrent ID: JN6FE67RRIRMK
+2025/05/03 09:16:13 main.go:602: Status code: 204
+2025/05/03 09:17:50 main.go:858: Starting LazyDebrid...
+2025/05/03 09:17:54 main.go:640: Magnet added. Torrent ID: NLJYDRYAVEI3K
+2025/05/03 09:17:54 main.go:602: Status code: 204
+2025/05/03 09:19:09 main.go:867: Starting LazyDebrid...
+2025/05/03 09:19:14 main.go:640: Magnet added. Torrent ID: 2ADTAEH3JHIFK
+2025/05/03 09:19:14 main.go:602: Status code: 204
+2025/05/03 09:19:39 main.go:868: Starting LazyDebrid...
+2025/05/03 09:19:48 main.go:640: Magnet added. Torrent ID: ZHWUOMKKVLOK6
+2025/05/03 09:19:48 main.go:602: Status code: 204
+2025/05/03 09:20:04 main.go:869: Starting LazyDebrid...
+2025/05/03 09:20:09 main.go:640: Magnet added. Torrent ID: AMVYIXMWCBBMA
+2025/05/03 09:20:09 main.go:602: Status code: 204
+2025/05/03 09:20:52 main.go:874: Starting LazyDebrid...
+2025/05/03 09:20:57 main.go:640: Magnet added. Torrent ID: HWS7UW5IHXLFK
+2025/05/03 09:20:57 main.go:602: Status code: 204
+2025/05/03 09:21:47 main.go:874: Starting LazyDebrid...
+2025/05/03 09:21:51 main.go:640: Magnet added. Torrent ID: VJ4QTDURAGC3W
+2025/05/03 09:21:52 main.go:602: Status code: 204
+2025/05/03 09:22:41 main.go:876: Starting LazyDebrid...
+2025/05/03 09:22:48 main.go:640: Magnet added. Torrent ID: ACLEKXIYYIT6E
+2025/05/03 09:22:48 main.go:602: Status code: 204
+2025/05/03 09:24:42 main.go:876: Starting LazyDebrid...
+2025/05/03 09:24:47 main.go:677: WORK
+2025/05/03 09:24:47 main.go:640: Magnet added. Torrent ID: B4ZCLNXQA42VC
+2025/05/03 09:24:47 main.go:602: Status code: 204
+2025/05/03 09:24:47 main.go:686: Magnet returned ID: B4ZCLNXQA42VC
+2025/05/03 09:24:47 main.go:602: Status code: 202
+2025/05/03 09:24:47 main.go:605: HTTP 202: {
+	"error": "action_already_done",
+	"error_code": 31
+}
+2025/05/03 09:24:47 main.go:689: addFilesToDebrid returned: false
+2025/05/03 09:24:47 main.go:695: ALL BAD
+2025/05/03 09:25:11 main.go:876: Starting LazyDebrid...
+2025/05/03 09:25:14 main.go:677: WORK
+2025/05/03 09:25:15 main.go:640: Magnet added. Torrent ID: XMSON2TZUZJ2U
+2025/05/03 09:25:15 main.go:602: Status code: 204
+2025/05/03 09:25:15 main.go:686: Magnet returned ID: XMSON2TZUZJ2U
+2025/05/03 09:25:15 main.go:602: Status code: 202
+2025/05/03 09:25:15 main.go:689: addFilesToDebrid returned: true
+2025/05/03 09:25:15 main.go:692: ALL GOOD
