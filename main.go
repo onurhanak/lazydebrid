@@ -38,15 +38,19 @@ var (
 	userSettings    = make(map[string]string)
 	downloadMap     = make(map[string]DebridDownload)
 	activeDownloads []ActiveDownload
-	views           = []string{"search", "torrents", "main"}
+	views           = []string{"search", "torrents", "details", "activeTorrents"}
 	currentViewIdx  int
 
 	userApiToken     string
 	userDownloadPath string
 	searchQuery      string
 
-	userConfigPath, _ = os.UserConfigDir()
-	lazyDebridConfig  = filepath.Join(userConfigPath, "lazyDebrid.json")
+	userConfigPath, _   = os.UserConfigDir()
+	lazyDebridConfig    = filepath.Join(userConfigPath, "lazyDebrid.json")
+	mainKeys            = "Switch Pane: <Tab> | Download Path: <^P> | API Key: <^X> | Quit: <^Q>"
+	torrentsKeys        = "Up: <k> | Down: <j> | Add Magnet: <a> | Copy link: <y> | Download: <d> | Keybindings: <?>"
+	activeDownloadsKeys = "Up: <k> | Down: <j> | Status: <s> | Delete <d> | Keybindings: <?>"
+	searchKeys          = "Search: <Enter> | Keybindings: <?>"
 )
 
 // MODELS
@@ -73,6 +77,19 @@ func nextView(g *gocui.Gui, v *gocui.View) error {
 	currentViewIdx = (currentViewIdx + 1) % len(views)
 	name := views[currentViewIdx]
 	_, err := g.SetCurrentView(name)
+
+	keysView, _ := g.View("footer")
+	keysView.Clear()
+	if name == "torrents" {
+		fmt.Fprint(keysView, torrentsKeys)
+	} else if name == "search" {
+		fmt.Fprint(keysView, searchKeys)
+	} else if name == "activeTorrents" {
+		fmt.Fprint(keysView, activeDownloadsKeys)
+	} else if name == "details" {
+		fmt.Fprint(keysView, "")
+	}
+
 	return err
 }
 
@@ -481,7 +498,7 @@ func updateDetails(g *gocui.Gui, v *gocui.View) error {
 		return nil
 	}
 
-	mainView, err := g.View("main")
+	mainView, err := g.View("details")
 	if err != nil {
 		return err
 	}
@@ -570,7 +587,7 @@ func deleteCurrentView(g *gocui.Gui, v *gocui.View) error {
 	}
 
 	log.Println(currentView.Name())
-	if currentView.Name() != "torrents" && currentView.Name() != "main" && currentView.Name() != "info" && currentView.Name() != "footer" && currentView.Name() != "search" {
+	if currentView.Name() != "torrents" && currentView.Name() != "details" && currentView.Name() != "info" && currentView.Name() != "footer" && currentView.Name() != "activeTorrents" && currentView.Name() != "search" {
 		g.DeleteView(currentView.Name())
 		g.SetCurrentView("torrents")
 	}
@@ -635,13 +652,21 @@ func keybindings(g *gocui.Gui) error {
 // LAYOUT
 
 func layout(g *gocui.Gui) error {
+
 	maxX, maxY := g.Size()
 	splitX := (maxX * 4) / 10
 	infoHeight := (maxY - 3) / 4
 
+	detailsTop := 3
+	detailsBottom := detailsTop + infoHeight // SHORTER main
 	g.Highlight = true
 	g.SelFgColor = gocui.ColorGreen
 
+	activeTop := detailsBottom + 1
+	activeBottom := activeTop + infoHeight // TALLER activeTorrents
+
+	infoTop := activeBottom + 1
+	infoBottom := maxY - 4 // Info view to bottom
 	if v, err := g.SetView("search", 0, 0, maxX-1, 2); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
@@ -666,11 +691,10 @@ func layout(g *gocui.Gui) error {
 		g.SetCurrentView("torrents")
 	}
 
-	if mainView, err := g.SetView("main", splitX+1, 3, maxX-1, maxY-3-infoHeight); err != nil {
-		if err != gocui.ErrUnknownView {
-			return err
-		}
-		mainView.Title = "Download Details"
+	if mainView, err := g.SetView("details", splitX+1, detailsTop, maxX-1, detailsBottom); err != nil && err != gocui.ErrUnknownView {
+		return err
+	} else if err == nil {
+		mainView.Title = "Torrent Details"
 		mainView.Wrap = true
 		if len(userDownloads) > 0 {
 			first := userDownloads[0]
@@ -679,25 +703,35 @@ func layout(g *gocui.Gui) error {
 		}
 	}
 
-	if infoView, err := g.SetView("info", splitX+1, maxY-3-infoHeight+1, maxX-1, maxY-4); err != nil {
-		if err != gocui.ErrUnknownView {
-			return err
+	if activeTorrentsView, err := g.SetView("activeTorrents", splitX+1, activeTop, maxX-1, activeBottom); err != nil && err != gocui.ErrUnknownView {
+		return err
+	} else if err == nil {
+		activeTorrentsView.Title = "Active Downloads"
+		activeTorrentsView.Highlight = true
+		activeTorrentsView.Wrap = false
+		activeTorrentsView.SelFgColor = gocui.ColorGreen
+		for _, item := range activeDownloads {
+			fmt.Fprintln(activeTorrentsView, item.ID)
 		}
-		infoView.Title = "Info"
+		activeTorrentsView.SetCursor(0, 0)
+	}
+
+	if infoView, err := g.SetView("info", splitX+1, infoTop, maxX-1, infoBottom); err != nil && err != gocui.ErrUnknownView {
+		return err
+	} else if err == nil {
+		infoView.Title = "Log"
 		infoView.Wrap = true
 		infoView.Autoscroll = true
 	}
 
-	if footerView, err := g.SetView("footer", 0, maxY-3, maxX-1, maxY); err != nil {
-		if err != gocui.ErrUnknownView {
-			return err
-		}
+	if footerView, err := g.SetView("footer", 0, infoBottom+1, maxX-1, infoBottom+3); err != nil && err != gocui.ErrUnknownView {
+		return err
+	} else if err == nil {
 		footerView.Frame = true
 		footerView.Wrap = true
 		footerView.Title = ""
-		fmt.Fprintln(footerView,
-			"?: Show shortcuts",
-		)
+
+		fmt.Fprint(footerView, mainKeys)
 	}
 
 	return nil
