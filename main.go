@@ -28,7 +28,7 @@ func init() {
 }
 
 const (
-	downloadsURL   = "https://api.real-debrid.com/rest/1.0/downloads?page=1&limit=5000"
+	downloadsURL   = "https://api.real-debrid.com/rest/1.0/downloads?page=1&limit=4990"
 	addMagnetURL   = "https://api.real-debrid.com/rest/1.0/torrents/addMagnet"
 	statusURL      = "https://api.real-debrid.com/rest/1.0/torrents/info/"
 	deleteURL      = "https://api.real-debrid.com/rest/1.0/torrents/delete/"
@@ -343,7 +343,6 @@ func getUserTorrents() map[string]DebridDownload {
 		downloadMap[torrentItem.Filename] = torrentItem
 	}
 
-	log.Println(downloadMap)
 	return downloadMap
 }
 
