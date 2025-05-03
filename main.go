@@ -145,6 +145,7 @@ func showModal(g *gocui.Gui, name, title string, content string, onSubmit func(s
 			v.Wrap = false
 			fmt.Fprint(v, content)
 		}
+		g.DeleteKeybindings(name)
 		_, _ = g.SetCurrentView(name)
 		g.SetKeybinding(name, gocui.KeyEnter, gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
 			input := strings.TrimSpace(v.Buffer())
@@ -645,7 +646,7 @@ func keybindings(g *gocui.Gui) error {
 	bind("", gocui.KeyCtrlX, gocui.ModNone, showSetTokenModal)
 	bind("", gocui.KeyCtrlQ, gocui.ModNone, quit)
 	bind("", gocui.KeyTab, gocui.ModNone, nextView)
-	bind("", '?', gocui.ModNone, showHelpModal)
+	bind("torrents", '?', gocui.ModNone, showHelpModal)
 	return nil
 }
 
@@ -710,6 +711,7 @@ func layout(g *gocui.Gui) error {
 		activeTorrentsView.Highlight = true
 		activeTorrentsView.Wrap = false
 		activeTorrentsView.SelFgColor = gocui.ColorGreen
+		activeTorrentsView.Clear()
 		for _, item := range activeDownloads {
 			fmt.Fprintln(activeTorrentsView, item.ID)
 		}
