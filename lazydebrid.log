@@ -11,3 +11,4 @@
 2025/05/03 15:09:36 actions.go:182: Magnet added. Torrent ID: XNNT37C4QSLBE
 2025/05/03 15:09:37 actions.go:144: Status code: 204
 2025/05/03 15:09:37 actions.go:144: Status code: 202
+2025/05/03 16:09:32 main.go:25: Starting LazyDebrid...
