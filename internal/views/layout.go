@@ -1,6 +1,8 @@
 package views
 
 import (
+	"fmt"
+
 	"github.com/jroimartin/gocui"
 )
 
@@ -68,7 +70,8 @@ func Layout(g *gocui.Gui) error {
 		if err != nil {
 			return err
 		}
-		_, err = g.SetCurrentView("torrents")
+		_, err = g.SetCurrentView(ViewTorrents)
+		updateFooter(g, ViewTorrents)
 		if err != nil {
 			return err
 		}
@@ -119,6 +122,7 @@ func Layout(g *gocui.Gui) error {
 		footerView.Wrap = true
 		footerView.Title = "Shortcuts"
 
+		_, err = fmt.Fprint(footerView, MainKeys)
 		if err != nil {
 			return err
 		}
