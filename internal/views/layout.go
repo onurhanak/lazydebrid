@@ -1,8 +1,6 @@
 package views
 
 import (
-	"fmt"
-
 	"github.com/jroimartin/gocui"
 )
 
@@ -119,9 +117,8 @@ func Layout(g *gocui.Gui) error {
 	} else if err == nil {
 		footerView.Frame = true
 		footerView.Wrap = true
-		footerView.Title = ""
+		footerView.Title = "Shortcuts"
 
-		_, err = fmt.Fprint(footerView, MainKeys)
 		if err != nil {
 			return err
 		}

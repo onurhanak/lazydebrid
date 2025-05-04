@@ -2,7 +2,8 @@ package views
 
 var (
 	MainKeys            = "Switch Pane: <Tab> | Download Path: <^P> | API Key: <^X> | Quit: <^Q>"
-	TorrentsKeys        = "Up: <k> | Down: <j> | Add Magnet: <a> | Copy link: <y> | Download: <d> | Keybindings: <?>"
+	TorrentsKeys        = "Up: <k> | Down: <j> | Add Magnet: <a> | Keybindings: <?>"
+	DetailsKeys         = "Up: <k> | Down: <j> | Copy link: <y> |  Download: <d> | Keybindings: <?>"
 	ActiveDownloadsKeys = "Up: <k> | Down: <j> | Status: <s> | Delete <d> | Keybindings: <?>"
 	SearchKeys          = "Search: <Enter> | Keybindings: <?>"
 )

@@ -1,7 +1,6 @@
 package views
 
 import (
-	"fmt"
 	"lazydebrid/internal/logs"
 
 	"github.com/jroimartin/gocui"
@@ -18,21 +17,9 @@ func CycleFocusToNextView(g *gocui.Gui) error {
 		return err
 	}
 
-	keysView, err := g.View("footer")
+	err := updateFooter(g, name)
 	if err != nil {
-		logs.LogEvent(err)
 		return err
 	}
-	keysView.Clear()
-
-	switch name {
-	case ViewTorrents:
-		fmt.Fprint(keysView, TorrentsKeys)
-	case ViewSearch:
-		fmt.Fprint(keysView, SearchKeys)
-	case ViewActiveTorrents:
-		fmt.Fprint(keysView, ActiveDownloadsKeys)
-	}
-
 	return nil
 }
