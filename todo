@@ -2,3 +2,4 @@ The torrent list does not have the latest torrents, test if this is realdebrid i
 Use torrents not /downloads
 Fix separation between actions and handlers
 Needs a download all function for the torrent files
+Needs a first setup func

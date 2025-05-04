@@ -24,6 +24,8 @@ func updateFooter(g *gocui.Gui, name string) error {
 		fmt.Fprint(keysView, ActiveDownloadsKeys)
 	case ViewDetails:
 		fmt.Fprint(keysView, DetailsKeys)
+	case ViewAddMagnet: //does not work?
+		fmt.Fprint(keysView, ModalKeys)
 	default:
 		fmt.Fprint(keysView, MainKeys)
 	}

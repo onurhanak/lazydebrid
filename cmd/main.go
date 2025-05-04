@@ -41,7 +41,6 @@ func main() {
 
 	g.Update(func(g *gocui.Gui) error {
 		handlers.PopulateViews(g)
-
 		v, err := g.View("torrents")
 		if err != nil {
 			return err
