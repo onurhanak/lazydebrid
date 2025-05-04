@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -52,7 +53,7 @@ func readResponse(resp *http.Response) ([]byte, error) {
 	return io.ReadAll(resp.Body)
 }
 
-func DoRequest(req *http.Request) (*http.Response, error) {
+func doRequest(req *http.Request) (*http.Response, error) {
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		logs.LogEvent(err)
@@ -73,7 +74,7 @@ func DeleteTorrent(g *gocui.Gui, v *gocui.View) error {
 		return err
 	}
 
-	resp, err := DoRequest(req)
+	resp, err := doRequest(req)
 	if err != nil {
 		return err
 	}
@@ -100,7 +101,7 @@ func AddFilesToDebrid(downloadID string) bool {
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	resp, err := DoRequest(req)
+	resp, err := doRequest(req)
 	if err != nil {
 		return false
 	}
@@ -112,6 +113,7 @@ func AddFilesToDebrid(downloadID string) bool {
 		logs.LogEvent(fmt.Errorf("failed to select files: HTTP %d: %s", resp.StatusCode, msg))
 		return false
 	}
+
 	return true
 }
 
@@ -123,7 +125,7 @@ func SendLinkToAPI(magnetLink string) (string, error) {
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	resp, err := DoRequest(req)
+	resp, err := doRequest(req)
 	if err != nil {
 		return "", err
 	}
@@ -140,6 +142,7 @@ func SendLinkToAPI(magnetLink string) (string, error) {
 	}
 
 	ActiveDownloads = append(ActiveDownloads, result)
+	log.Printf("ActiveDownloads now: %d entries", len(ActiveDownloads))
 	if !AddFilesToDebrid(result.ID) {
 		return "", fmt.Errorf("magnet added but failed to select files")
 	}
@@ -159,7 +162,7 @@ func GetTorrentStatus(g *gocui.Gui, v *gocui.View) error {
 		return err
 	}
 
-	resp, err := DoRequest(req)
+	resp, err := doRequest(req)
 	if err != nil {
 		return err
 	}
@@ -222,7 +225,7 @@ func GetUserTorrents() map[string]models.DebridDownload {
 		return result
 	}
 
-	resp, err := DoRequest(req)
+	resp, err := doRequest(req)
 	if err != nil {
 		logs.LogEvent(err)
 		return result

@@ -2,6 +2,7 @@ package views
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/jroimartin/gocui"
@@ -19,26 +20,27 @@ func ShowModal(g *gocui.Gui, name, title, content string, onSubmit InputHandler)
 
 	v, err := g.SetView(name, x0, y0, x1, y1)
 	if err != nil && err != gocui.ErrUnknownView {
+		log.Println("error")
 		return err
 	}
 
-	if err == nil {
-		v.Title = title
-		v.Wrap = true
-		v.Editable = (name != ViewHelp)
+	v.Title = title
+	v.Wrap = true
+	v.Editable = (name != ViewHelp)
+	log.Println("Editable:", v.Editable)
 
-		if name == ViewHelp {
-			_, _ = fmt.Fprint(v, content)
-		}
-
-		g.DeleteKeybindings(name)
-		g.SetKeybinding(name, gocui.KeyEnter, gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
-			input := strings.TrimSpace(v.Buffer())
-			_ = g.DeleteView(name)
-			_, _ = g.SetCurrentView(ViewTorrents)
-			return onSubmit(input)
-		})
+	if name == ViewHelp {
+		v.Clear()
+		_, _ = fmt.Fprint(v, content)
 	}
+
+	g.DeleteKeybindings(name)
+	_ = g.SetKeybinding(name, gocui.KeyEnter, gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
+		input := strings.TrimSpace(v.Buffer())
+		_ = g.DeleteView(name)
+		_, _ = g.SetCurrentView(ViewTorrents)
+		return onSubmit(input)
+	})
 
 	_, err = g.SetCurrentView(name)
 	return err

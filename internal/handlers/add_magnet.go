@@ -16,7 +16,6 @@ func HandleAddMagnetLink(g *gocui.Gui, input string) error {
 	input = strings.TrimSpace(input)
 	info := views.GetView(g, views.ViewInfo)
 	now := logs.GetNow()
-
 	if input == "" {
 		logui.LogInfo(info, now, "Error: Empty magnet link")
 		return nil
@@ -31,6 +30,7 @@ func HandleAddMagnetLink(g *gocui.Gui, input string) error {
 
 	if actions.AddFilesToDebrid(id) {
 		logui.LogInfo(info, now, fmt.Sprintf("All files selected for download: %s", id))
+
 	} else {
 		logui.LogError(info, now, fmt.Sprintf("Failed to select files for %s", id), nil)
 	}

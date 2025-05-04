@@ -7,9 +7,9 @@ import (
 )
 
 func LogInfo(v *gocui.View, time string, errorString string) {
-	fmt.Fprintf(v, "[ %s ] %s", time, errorString)
+	fmt.Fprintf(v, "\n[ %s ] %s", time, errorString)
 }
 
 func LogError(v *gocui.View, time string, errorString string, err error) {
-	fmt.Fprintf(v, "[ %s ] %s\n%s", time, errorString, err)
+	fmt.Fprintf(v, "\n[ %s ] %s\n%s", time, errorString, err)
 }

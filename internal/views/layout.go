@@ -23,6 +23,8 @@ var (
 	Views = []string{ViewSearch, ViewTorrents, ViewDetails, ViewActiveTorrents, ViewInfo}
 )
 
+var OnLayoutReady func(*gocui.Gui)
+
 func Layout(g *gocui.Gui) error {
 
 	maxX, maxY := g.Size()
@@ -82,7 +84,7 @@ func Layout(g *gocui.Gui) error {
 
 	}
 
-	if activeTorrentsView, err := g.SetView("activeTorrents", splitX+1, activeTop, maxX-1, activeBottom); err != nil && err != gocui.ErrUnknownView {
+	if activeTorrentsView, err := g.SetView(ViewActiveTorrents, splitX+1, activeTop, maxX-1, activeBottom); err != nil && err != gocui.ErrUnknownView {
 		return err
 	} else if err == nil {
 		activeTorrentsView.Title = "Active Downloads"
@@ -125,6 +127,8 @@ func Layout(g *gocui.Gui) error {
 			return err
 		}
 	}
-
+	if OnLayoutReady != nil {
+		OnLayoutReady(g)
+	}
 	return nil
 }

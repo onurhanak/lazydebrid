@@ -3,6 +3,7 @@ package views
 import (
 	"fmt"
 	"lazydebrid/internal/logs"
+	"log"
 
 	"github.com/jroimartin/gocui"
 )
@@ -22,7 +23,7 @@ func LogViewError(v *gocui.View, time string, errorString string, err error) {
 
 func CloseView(g *gocui.Gui, name string) error {
 	if err := g.DeleteView(name); err != nil {
-		return err
+		log.Println(err)
 	}
 	_, err := g.SetCurrentView(ViewTorrents)
 	if err != nil {

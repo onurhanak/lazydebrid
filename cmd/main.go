@@ -49,6 +49,9 @@ func main() {
 		return handlers.UpdateDetails(g, v)
 	})
 
+	// delay populate views until views are ready
+	// otherwise active torrents does not show
+	views.OnLayoutReady = handlers.PopulateViews
 	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
 		log.Panicln(err)
 	}
