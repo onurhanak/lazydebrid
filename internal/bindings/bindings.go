@@ -30,11 +30,11 @@ func Keybindings(g *gocui.Gui) error {
 	bind("search", gocui.KeyEnter, gocui.ModNone, handlers.SearchKeyPress)
 	bind("", gocui.KeyCtrlC, gocui.ModNone, handlers.CopyDownloadLink)
 	bind("", gocui.KeyCtrlD, gocui.ModNone, handlers.DownloadSelected)
-	bind("", gocui.KeyCtrlA, gocui.ModNone, handlers.HandleAddMagnetLink)
+	bind("", gocui.KeyCtrlA, gocui.ModNone, handlers.ShowAddMagnetModal)
 	bind("", gocui.KeyCtrlP, gocui.ModNone, handlers.ShowSetPathModal)
 	bind("", gocui.KeyCtrlX, gocui.ModNone, handlers.ShowSetTokenModal)
 	bind("", gocui.KeyCtrlQ, gocui.ModNone, handlers.Quit)
-	bind("", gocui.KeyTab, gocui.ModNone, handlers.NextView)
+	bind("", gocui.KeyTab, gocui.ModNone, handlers.CycleViewHandler)
 	bind("torrents", '?', gocui.ModNone, handlers.ShowHelpModal)
 	return nil
 }

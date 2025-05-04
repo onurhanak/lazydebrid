@@ -26,7 +26,7 @@ func RenderList(g *gocui.Gui) error {
 	}
 
 	for _, torrentItem := range actions.UserDownloads {
-		if config.SearchQuery == "" || Match(torrentItem.Filename, config.SearchQuery) {
+		if config.SearchQuery() == "" || Match(torrentItem.Filename, config.SearchQuery()) {
 			_, err := fmt.Fprintln(v, torrentItem.Filename)
 			if err != nil {
 				return err

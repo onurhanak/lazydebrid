@@ -38,14 +38,19 @@ func main() {
 	if err := bindings.Keybindings(g); err != nil {
 		log.Panicln(err)
 	}
+
 	g.Update(func(g *gocui.Gui) error {
+		handlers.PopulateViews(g)
+
 		v, err := g.View("torrents")
 		if err != nil {
 			return err
 		}
 		return handlers.UpdateDetails(g, v)
 	})
+
 	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
 		log.Panicln(err)
 	}
+
 }

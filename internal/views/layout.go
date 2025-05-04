@@ -2,14 +2,25 @@ package views
 
 import (
 	"fmt"
-	"lazydebrid/internal/actions"
-	"strings"
 
 	"github.com/jroimartin/gocui"
 )
 
+const (
+	ViewTorrents       = "torrents"
+	ViewDetails        = "details"
+	ViewInfo           = "info"
+	ViewSearch         = "search"
+	ViewActiveTorrents = "activeTorrents"
+	ViewFooter         = "footer"
+	ViewAddMagnet      = "addMagnet"
+	ViewSetPath        = "setPath"
+	ViewSetToken       = "setToken"
+	ViewHelp           = "help"
+)
+
 var (
-	Views = []string{"search", "torrents", "details", "activeTorrents"}
+	Views = []string{ViewSearch, ViewTorrents, ViewDetails, ViewActiveTorrents, ViewInfo}
 )
 
 func Layout(g *gocui.Gui) error {
@@ -45,12 +56,14 @@ func Layout(g *gocui.Gui) error {
 		torrentsView.Wrap = false
 		torrentsView.SelFgColor = gocui.ColorGreen
 
-		for _, item := range actions.UserDownloads {
-			_, err := fmt.Fprintln(torrentsView, item.Filename)
-			if err != nil {
-				return err
-			}
-		}
+		// Populate later in main.go to avoid import cycle
+		//
+		//for _, item := range actions.UserDownloads {
+		//	_, err := fmt.Fprintln(torrentsView, item.Filename)
+		//	if err != nil {
+		//		return err
+		//	}
+		//}
 		err = torrentsView.SetCursor(0, 0)
 		if err != nil {
 			return err
@@ -77,12 +90,15 @@ func Layout(g *gocui.Gui) error {
 		activeTorrentsView.Wrap = false
 		activeTorrentsView.SelFgColor = gocui.ColorGreen
 		activeTorrentsView.Clear()
-		for _, item := range actions.ActiveDownloads {
-			_, err = fmt.Fprintln(activeTorrentsView, item.ID)
-			if err != nil {
-				return err
-			}
-		}
+
+		// Populate later in main.go to avoid import cycle
+		//
+		//for _, item := range actions.ActiveDownloads {
+		//	_, err = fmt.Fprintln(activeTorrentsView, item.ID)
+		//	if err != nil {
+		//		return err
+		//	}
+		//}
 		err = activeTorrentsView.SetCursor(0, 0)
 		if err != nil {
 			return err
@@ -110,53 +126,5 @@ func Layout(g *gocui.Gui) error {
 		}
 	}
 
-	return nil
-}
-
-func ShowModal(g *gocui.Gui, name, title string, content string, onSubmit func(string)) error {
-	maxX, maxY := g.Size()
-	w, h := maxX/2, 5
-	x0 := (maxX - w) / 2
-	y0 := (maxY - h) / 2
-	x1 := x0 + w
-	y1 := y0 + h
-
-	if v, err := g.SetView(name, x0, y0, x1, y1); err != nil {
-		if err != gocui.ErrUnknownView {
-			return err
-		}
-
-		v.Title = title
-		if name != "help" {
-			v.Title = title
-			v.Editable = true
-			v.Wrap = true
-		} else {
-			v.Editable = false
-			v.Wrap = false
-			_, err = fmt.Fprint(v, content)
-			if err != nil {
-				return err
-			}
-		}
-		g.DeleteKeybindings(name)
-		_, _ = g.SetCurrentView(name)
-		err = g.SetKeybinding(name, gocui.KeyEnter, gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
-			input := strings.TrimSpace(v.Buffer())
-			err = g.DeleteView(name)
-			if err != nil {
-				return err
-			}
-			_, err = g.SetCurrentView("torrents")
-			if err != nil {
-				return err
-			}
-			onSubmit(input)
-			return nil
-		})
-		if err != nil {
-			return err
-		}
-	}
 	return nil
 }
