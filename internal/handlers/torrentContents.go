@@ -11,7 +11,7 @@ import (
 	"github.com/jroimartin/gocui"
 )
 
-func refreshTorrentsView(g *gocui.Gui, v *gocui.View, fileMap map[string]models.Download) {
+func showTorrentFiles(g *gocui.Gui, v *gocui.View, fileMap map[string]models.Download) {
 
 	g.Update(func(g *gocui.Gui) error {
 		detailsView := views.GetView(g, views.ViewDetails)
@@ -39,7 +39,7 @@ func FileContentsHandler(g *gocui.Gui, v *gocui.View) error {
 		torrentFiles := actions.GetTorrentContents(g, v)
 
 		g.Update(func(g *gocui.Gui) error {
-			refreshTorrentsView(g, v, torrentFiles)
+			showTorrentFiles(g, v, torrentFiles)
 			return nil
 		})
 	}()
