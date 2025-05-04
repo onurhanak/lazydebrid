@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"lazydebrid/internal/actions"
+	"lazydebrid/internal/logs"
 	"lazydebrid/internal/models"
 	"lazydebrid/internal/views"
 	"log"
@@ -16,8 +17,9 @@ func refreshTorrentsView(g *gocui.Gui, v *gocui.View, fileMap map[string]models.
 	g.Update(func(g *gocui.Gui) error {
 		detailsView := views.GetView(g, views.ViewDetails)
 		if detailsView == nil {
-			log.Println("torrentsView is nil")
-			return fmt.Errorf("torrentsView is nil")
+			err := fmt.Errorf("torrentsView is nil")
+			logs.LogEvent(err)
+			return err
 		}
 
 		detailsView.Clear()

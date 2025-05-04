@@ -8,7 +8,6 @@ import (
 
 	"lazydebrid/internal/actions"
 	"lazydebrid/internal/config"
-	"lazydebrid/internal/logs"
 	"lazydebrid/internal/logui"
 	"lazydebrid/internal/models"
 	"lazydebrid/internal/views"
@@ -26,15 +25,10 @@ func DownloadSelectedFile(g *gocui.Gui, v *gocui.View) error {
 		return fmt.Errorf("no download item found for selected line")
 	}
 
-	infoView := views.GetView(g, views.ViewInfo)
-	now := logs.GetNow()
-
-	logui.LogInfo(infoView, now, fmt.Sprintf("Downloading %s to %s", downloadItem.Filename, config.DownloadPath()))
-
+	logui.UpdateUILog(g, views.ViewInfo, fmt.Sprintf("Downloading %s to %s", downloadItem.Filename, config.DownloadPath()))
 	go func(item models.Download) {
 		if actions.DownloadFile(item) {
-			now := logs.GetNow()
-			logui.LogInfo(infoView, now, fmt.Sprintf("Downloaded %s to %s", item.Filename, config.DownloadPath()))
+			logui.UpdateUILog(g, views.ViewInfo, fmt.Sprintf("Downloaded %s to %s", item.Filename, config.DownloadPath()))
 		}
 	}(downloadItem)
 
@@ -54,7 +48,7 @@ func CopyDownloadLink(g *gocui.Gui, v *gocui.View) error {
 	}
 
 	if err := clipboard.WriteAll(item.Download); err != nil {
-		logui.LogError(v, logs.GetNow(), "Failed to copy download link", err)
+		logui.UpdateUILog(g, v.Name(), fmt.Sprintf("Failed to copy download link: %s", err))
 	}
 	return nil
 }
