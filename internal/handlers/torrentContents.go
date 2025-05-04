@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"lazydebrid/internal/actions"
 	"lazydebrid/internal/models"
 	"lazydebrid/internal/views"
 	"log"
@@ -9,7 +10,7 @@ import (
 	"github.com/jroimartin/gocui"
 )
 
-func RefreshTorrentsView(g *gocui.Gui, v *gocui.View, fileMap map[string]models.Download) {
+func refreshTorrentsView(g *gocui.Gui, v *gocui.View, fileMap map[string]models.Download) {
 	log.Println("Refreshing")
 
 	g.Update(func(g *gocui.Gui) error {
@@ -28,4 +29,10 @@ func RefreshTorrentsView(g *gocui.Gui, v *gocui.View, fileMap map[string]models.
 		_, _ = g.SetCurrentView(views.ViewDetails)
 		return nil
 	})
+}
+
+func FileContentsHandler(g *gocui.Gui, v *gocui.View) error {
+	torrentFiles := actions.GetTorrentContents(g, v)
+	refreshTorrentsView(g, v, torrentFiles)
+	return nil
 }

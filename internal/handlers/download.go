@@ -14,7 +14,7 @@ import (
 	"lazydebrid/internal/views"
 )
 
-func DownloadSelected(g *gocui.Gui, v *gocui.View) error {
+func DownloadSelectedFile(g *gocui.Gui, v *gocui.View) error {
 	_, cy := v.Cursor()
 	line, err := v.Line(cy)
 	if err != nil {

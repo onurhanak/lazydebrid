@@ -227,6 +227,7 @@ func GetTorrentContents(g *gocui.Gui, v *gocui.View) map[string]models.Download 
 	infoView := views.GetView(g, views.ViewInfo)
 	now := logs.GetNow()
 	logui.LogInfo(infoView, now, "Getting torrent contents...")
+	FilesMap = make(map[string]models.Download)
 	for _, link := range links {
 
 		data := url.Values{"link": {link}}
