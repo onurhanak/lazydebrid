@@ -1,6 +1,6 @@
 package models
 
-type DebridDownload struct {
+type Download struct {
 	Id         string `json:"id"`
 	Filename   string `json:"filename"`
 	MimeType   string `json:"mimeType"`
@@ -14,7 +14,7 @@ type DebridDownload struct {
 	Generated  string `json:"generated"`
 }
 
-type TorrentStatus struct {
+type Torrent struct {
 	ID               string        `json:"id"`
 	Filename         string        `json:"filename"`
 	OriginalFilename string        `json:"original_filename"`

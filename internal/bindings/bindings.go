@@ -24,7 +24,7 @@ func Keybindings(g *gocui.Gui) error {
 	bind("torrents", 'k', gocui.ModNone, handlers.CursorUp)
 	bind("", gocui.KeyArrowDown, gocui.ModNone, handlers.CursorDown)
 	bind("", gocui.KeyArrowUp, gocui.ModNone, handlers.CursorUp)
-	bind("torrents", gocui.KeyEnter, gocui.ModNone, handlers.DownloadSelected)
+	bind("torrents", gocui.KeyEnter, gocui.ModNone, handlers.FileContentsHandler)
 	bind("torrents", '/', gocui.ModNone, handlers.FocusSearchBar)
 	bind("details", '/', gocui.ModNone, handlers.FocusSearchBar)
 	bind("search", gocui.KeyEnter, gocui.ModNone, handlers.SearchKeyPress)

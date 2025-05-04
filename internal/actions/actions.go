@@ -23,6 +23,7 @@ const (
 	baseURL                = "https://api.real-debrid.com/rest/1.0"
 	torrentsEndpointURL    = baseURL + "/torrents"
 	downloadsURL           = baseURL + "/downloads?page=1&limit=4990"
+	torrentsURL            = baseURL + "/torrents/"
 	torrentsAddMagnetURL   = torrentsEndpointURL + "/addMagnet/"
 	torrentsStatusURL      = torrentsEndpointURL + "/info/"
 	torrentsDeleteURL      = torrentsEndpointURL + "/delete/"
@@ -30,8 +31,8 @@ const (
 )
 
 var (
-	UserDownloads   []models.DebridDownload
-	DownloadMap     = make(map[string]models.DebridDownload)
+	UserDownloads   []models.Torrent
+	DownloadMap     = make(map[string]models.Torrent)
 	ActiveDownloads []models.ActiveDownload
 )
 
@@ -175,7 +176,7 @@ func GetTorrentStatus(g *gocui.Gui, v *gocui.View) error {
 		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	var status models.TorrentStatus
+	var status models.Torrent
 	if err := json.NewDecoder(resp.Body).Decode(&status); err != nil {
 		logs.LogEvent(err)
 		logui.LogError(views.GetView(g, views.ViewInfo), logs.GetNow(), "Failed to decode torrent status", err)
@@ -190,7 +191,7 @@ func GetTorrentStatus(g *gocui.Gui, v *gocui.View) error {
 	)
 	return err
 }
-func DownloadFile(torrent models.DebridDownload) bool {
+func DownloadFile(torrent models.Torrent) bool {
 	path := fmt.Sprintf("%s%s", config.DownloadPath(), torrent.Filename)
 	out, err := os.Create(path)
 	if err != nil {
@@ -199,7 +200,7 @@ func DownloadFile(torrent models.DebridDownload) bool {
 	}
 	defer out.Close()
 
-	resp, err := http.Get(torrent.Download)
+	resp, err := http.Get("")
 	if err != nil {
 		logs.LogEvent(err)
 		return false
@@ -216,10 +217,36 @@ func DownloadFile(torrent models.DebridDownload) bool {
 	return true
 }
 
-func GetUserTorrents() map[string]models.DebridDownload {
-	result := make(map[string]models.DebridDownload)
+func GetTorrentContents(g *gocui.Gui, v *gocui.View) []models.Download {
+	_, cy := v.Cursor()
+	line, _ := v.Line(cy)
 
-	req, err := newRequest("GET", downloadsURL, nil)
+	var torrentFile models.Download
+	var torrentFiles []models.Download
+	links := DownloadMap[line].Links
+	infoView := views.GetView(g, views.ViewInfo)
+	now := logs.GetNow()
+	logui.LogInfo(infoView, now, "Getting torrent contents...")
+	for _, link := range links {
+
+		data := url.Values{"link": {link}}
+		req, _ := newRequest("POST", "https://api.real-debrid.com/rest/1.0/unrestrict/link/", strings.NewReader(data.Encode()))
+		resp, _ := doRequest(req)
+		response, _ := readResponse(resp)
+		if err := json.Unmarshal(response, &torrentFile); err != nil {
+			logs.LogEvent(err)
+			continue
+		}
+		torrentFiles = append(torrentFiles, torrentFile)
+	}
+
+	return torrentFiles
+}
+
+func GetUserTorrents() map[string]models.Torrent {
+	result := make(map[string]models.Torrent)
+
+	req, err := newRequest("GET", torrentsURL, nil)
 	if err != nil {
 		logs.LogEvent(err)
 		return result
@@ -238,7 +265,7 @@ func GetUserTorrents() map[string]models.DebridDownload {
 		return result
 	}
 
-	var list []models.DebridDownload
+	var list []models.Torrent
 	if err := json.Unmarshal(body, &list); err != nil {
 		logs.LogEvent(err)
 		return result
@@ -246,6 +273,7 @@ func GetUserTorrents() map[string]models.DebridDownload {
 
 	for _, item := range list {
 		result[item.Filename] = item
+		log.Println(item)
 	}
 	DownloadMap = result
 	UserDownloads = list

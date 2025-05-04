@@ -43,16 +43,15 @@ func GetCurrentLine(v *gocui.View) (string, error) {
 	return line, err
 }
 
-func GenerateDetailsString(torrentItem models.DebridDownload) string {
+func GenerateDetailsString(torrentItem models.Torrent) string {
 	detailsString := fmt.Sprintf(
-		"ID: %s\nFilename: %s\nMIME Type: %s\nFilesize: %d bytes\nLink: %s\nDownload: %s\nStreamable: %d",
-		torrentItem.Id,
+		"ID: %s\nFilename: %s\nFilesize: %d bytes\nLink: %s\nDownload: %s\nStreamable: %d",
+		torrentItem.ID,
 		torrentItem.Filename,
-		torrentItem.MimeType,
-		torrentItem.Filesize,
-		torrentItem.Link,
-		torrentItem.Download,
-		torrentItem.Streamable,
+		torrentItem.Bytes,
+		torrentItem.Hash,
+		torrentItem.Hash,
+		torrentItem.Bytes,
 	)
 	return detailsString
 }

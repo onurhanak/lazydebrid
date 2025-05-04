@@ -31,7 +31,7 @@ func DownloadSelected(g *gocui.Gui, v *gocui.View) error {
 
 	logui.LogInfo(infoView, now, fmt.Sprintf("Downloading %s to %s", downloadItem.Filename, config.DownloadPath()))
 
-	go func(item models.DebridDownload) {
+	go func(item models.Torrent) {
 		if actions.DownloadFile(item) {
 			now := logs.GetNow()
 			logui.LogInfo(infoView, now, fmt.Sprintf("Downloaded %s to %s", item.Filename, config.DownloadPath()))
@@ -48,12 +48,13 @@ func CopyDownloadLink(g *gocui.Gui, v *gocui.View) error {
 		return err
 	}
 
-	item, ok := actions.DownloadMap[line]
+	//	item, ok := actions.DownloadMap[line]
+	_, ok := actions.DownloadMap[line]
 	if !ok {
 		return fmt.Errorf("no download link found")
 	}
 
-	if err := clipboard.WriteAll(item.Download); err != nil {
+	if err := clipboard.WriteAll(""); err != nil {
 		logui.LogError(v, logs.GetNow(), "Failed to copy download link", err)
 	}
 	return nil
