@@ -3,12 +3,14 @@ package config
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
 const configFileName = "lazyDebrid.json"
+const lazyDebridFolder = "lazyDebrid"
 
 var (
 	settings = make(map[string]string)
@@ -18,21 +20,24 @@ var (
 	searchQuery      string
 )
 
-func ConfigPath() (string, error) {
-	dir, err := os.UserConfigDir()
+func ConfigPath() (string, string, error) {
+	configDir, err := os.UserConfigDir()
+	lazyDebridFolderPath := filepath.Join(configDir, lazyDebridFolder)
+	lazyDebridConfigPath := filepath.Join(lazyDebridFolderPath, configFileName)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
-	return filepath.Join(dir, configFileName), nil
+
+	return lazyDebridConfigPath, lazyDebridFolderPath, nil
 }
 
 func LoadUserSettings() error {
-	path, err := ConfigPath()
+	lazyDebridConfigPath, _, err := ConfigPath()
 	if err != nil {
 		return err
 	}
 
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(lazyDebridConfigPath)
 	if err != nil {
 		return err
 	}
@@ -47,13 +52,14 @@ func LoadUserSettings() error {
 }
 
 func SaveSetting(key, value string) error {
-	path, err := ConfigPath()
+	lazyDebridConfigPath, _, err := ConfigPath()
 	if err != nil {
 		return err
 	}
 
+	fmt.Println(key, value)
 	// reload in case there is manual modification
-	data, _ := os.ReadFile(path)
+	data, _ := os.ReadFile(lazyDebridConfigPath)
 	_ = json.Unmarshal(data, &settings)
 
 	settings[key] = strings.TrimSpace(value)
@@ -62,7 +68,7 @@ func SaveSetting(key, value string) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, content, 0644)
+	return os.WriteFile(lazyDebridConfigPath, content, 0644)
 }
 
 func Get(key string) (string, error) {

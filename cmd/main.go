@@ -23,6 +23,8 @@ func init() {
 
 func main() {
 	log.Println("Starting LazyDebrid...")
+	handlers.HandleFirstRun()
+
 	err := config.LoadUserSettings()
 	if err != nil {
 		log.Fatalln("Could not not load user settings, bailing.")

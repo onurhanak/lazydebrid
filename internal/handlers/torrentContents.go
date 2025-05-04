@@ -4,15 +4,14 @@ import (
 	"fmt"
 	"lazydebrid/internal/actions"
 	"lazydebrid/internal/logs"
+	"lazydebrid/internal/logui"
 	"lazydebrid/internal/models"
 	"lazydebrid/internal/views"
-	"log"
 
 	"github.com/jroimartin/gocui"
 )
 
 func refreshTorrentsView(g *gocui.Gui, v *gocui.View, fileMap map[string]models.Download) {
-	log.Println("Refreshing")
 
 	g.Update(func(g *gocui.Gui) error {
 		detailsView := views.GetView(g, views.ViewDetails)
@@ -34,7 +33,15 @@ func refreshTorrentsView(g *gocui.Gui, v *gocui.View, fileMap map[string]models.
 }
 
 func FileContentsHandler(g *gocui.Gui, v *gocui.View) error {
-	torrentFiles := actions.GetTorrentContents(g, v)
-	refreshTorrentsView(g, v, torrentFiles)
+	logui.UpdateUILog(g, "Getting file contents...")
+
+	go func() {
+		torrentFiles := actions.GetTorrentContents(g, v)
+
+		g.Update(func(g *gocui.Gui) error {
+			refreshTorrentsView(g, v, torrentFiles)
+			return nil
+		})
+	}()
 	return nil
 }
