@@ -37,6 +37,12 @@ var (
 	FilesMap        = make(map[string]models.Download)
 )
 
+type LineMapping struct {
+	ID string
+}
+
+var TorrentLineIndex []string
+
 func newRequest(method, urlStr string, body io.Reader) (*http.Request, error) {
 	req, err := http.NewRequest(method, urlStr, body)
 	if err != nil {
@@ -218,25 +224,68 @@ func DownloadFile(torrent models.Download) bool {
 	return true
 }
 
-func GetTorrentContents(g *gocui.Gui, v *gocui.View) map[string]models.Download {
+func GetSelectedTorrentID(v *gocui.View) (string, error) {
 	_, cy := v.Cursor()
-	line, _ := v.Line(cy)
+	if cy < 0 || cy >= len(TorrentLineIndex) {
+		return "", fmt.Errorf("invalid cursor line index: %d", cy)
+	}
+	return TorrentLineIndex[cy], nil
+}
+
+func GetTorrentContents(g *gocui.Gui, v *gocui.View) map[string]models.Download {
+	id, err := GetSelectedTorrentID(v)
+	if err != nil {
+		log.Println("Selection error:", err)
+		return nil
+	}
+
+	torrent, ok := DownloadMap[id]
+	if !ok {
+		log.Printf("No torrent found for ID: %s", id)
+		return nil
+	}
 
 	var torrentFile models.Download
-	links := DownloadMap[line].Links
+	var errorMessage struct {
+		Error     string `json:"error"`
+		ErrorCode int    `json:"error_code"`
+	}
 
+	var errorLog []string
 	FilesMap = make(map[string]models.Download)
-	for _, link := range links {
 
+	for _, link := range torrent.Links {
 		data := url.Values{"link": {link}}
-		req, _ := newRequest("POST", "https://api.real-debrid.com/rest/1.0/unrestrict/link/", strings.NewReader(data.Encode()))
+		req, _ := newRequest("POST", baseURL+"/unrestrict/link/", strings.NewReader(data.Encode()))
 		resp, _ := doRequest(req)
 		response, _ := readResponse(resp)
+
+		// does not work
 		if err := json.Unmarshal(response, &torrentFile); err != nil {
 			logs.LogEvent(err)
+			if err = json.Unmarshal(response, &errorMessage); err == nil {
+				logs.LogEvent(fmt.Errorf("API error: %s (code %d)", errorMessage.Error, errorMessage.ErrorCode))
+				errorLog = append(errorLog, errorMessage.Error)
+			} else {
+				errorLog = append(errorLog, "Unmarshal failed and no API error given")
+			}
+			log.Println("log")
+			log.Println(errorLog)
 			continue
 		}
-		FilesMap[torrentFile.Filename] = torrentFile
+
+		if torrentFile.Filename != "" {
+			FilesMap[torrentFile.Filename] = torrentFile
+		}
+	}
+
+	if len(errorLog) > 0 {
+		msg := strings.Join(errorLog, "; ")
+		log.Println(msg)
+		g.Update(func(g *gocui.Gui) error {
+			logui.UpdateUILog(g, msg)
+			return nil
+		})
 	}
 
 	return FilesMap
@@ -271,10 +320,20 @@ func GetUserTorrents() map[string]models.Torrent {
 	}
 
 	for _, item := range list {
+		TorrentLineIndex = append(TorrentLineIndex, item.Filename)
 		result[item.Filename] = item
 	}
 	DownloadMap = result
 	UserDownloads = list
 
 	return result
+}
+
+func DumpTorrentsToJSON(torrents map[string]models.Torrent, filename string) error {
+	data, err := json.MarshalIndent(torrents, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal torrents: %w", err)
+	}
+
+	return os.WriteFile(filename, data, 0644)
 }

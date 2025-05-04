@@ -31,7 +31,13 @@ func showTorrentFiles(g *gocui.Gui, v *gocui.View, fileMap map[string]models.Dow
 		return nil
 	})
 }
-
+func GetSelectedTorrentID(v *gocui.View) (string, error) {
+	_, cy := v.Cursor()
+	if cy < 0 || cy >= len(actions.TorrentLineIndex) {
+		return "", fmt.Errorf("invalid cursor line index: %d", cy)
+	}
+	return actions.TorrentLineIndex[cy], nil
+}
 func FileContentsHandler(g *gocui.Gui, v *gocui.View) error {
 	logui.UpdateUILog(g, "Getting file contents...")
 

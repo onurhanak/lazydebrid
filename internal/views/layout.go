@@ -14,6 +14,7 @@ const (
 	ViewAddMagnet      = "addMagnet"
 	ViewSetPath        = "setPath"
 	ViewSetToken       = "setToken"
+	ViewFirstRun       = "firstRun"
 	ViewHelp           = "help"
 )
 
