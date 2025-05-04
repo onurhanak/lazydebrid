@@ -81,7 +81,6 @@ func Layout(g *gocui.Gui) error {
 	} else if err == nil {
 		mainView.Title = "Torrent Details"
 		mainView.Wrap = true
-
 	}
 
 	if activeTorrentsView, err := g.SetView(ViewActiveTorrents, splitX+1, activeTop, maxX-1, activeBottom); err != nil && err != gocui.ErrUnknownView {

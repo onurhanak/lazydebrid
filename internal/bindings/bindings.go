@@ -5,6 +5,7 @@ import (
 
 	"lazydebrid/internal/actions"
 	"lazydebrid/internal/handlers"
+	"lazydebrid/internal/views"
 
 	"github.com/jroimartin/gocui"
 )
@@ -16,18 +17,21 @@ func Keybindings(g *gocui.Gui) error {
 		}
 	}
 
-	bind("activeTorrents", 'd', gocui.ModNone, actions.DeleteTorrent)
-	bind("activeTorrents", 's', gocui.ModNone, actions.GetTorrentStatus)
-	bind("activeTorrents", 'j', gocui.ModNone, handlers.CursorDown)
-	bind("activeTorrents", 'k', gocui.ModNone, handlers.CursorUp)
-	bind("torrents", 'j', gocui.ModNone, handlers.CursorDown)
-	bind("torrents", 'k', gocui.ModNone, handlers.CursorUp)
-	bind("", gocui.KeyArrowDown, gocui.ModNone, handlers.CursorDown)
-	bind("", gocui.KeyArrowUp, gocui.ModNone, handlers.CursorUp)
-	bind("torrents", gocui.KeyEnter, gocui.ModNone, handlers.FileContentsHandler)
-	bind("torrents", '/', gocui.ModNone, handlers.FocusSearchBar)
-	bind("details", '/', gocui.ModNone, handlers.FocusSearchBar)
-	bind("search", gocui.KeyEnter, gocui.ModNone, handlers.SearchKeyPress)
+	bind(views.ViewActiveTorrents, 'd', gocui.ModNone, actions.DeleteTorrent)
+	bind(views.ViewActiveTorrents, 's', gocui.ModNone, actions.GetTorrentStatus)
+	bind(views.ViewActiveTorrents, 'j', gocui.ModNone, handlers.CursorDown)
+	bind(views.ViewActiveTorrents, 'k', gocui.ModNone, handlers.CursorUp)
+
+	bind(views.ViewDetails, 'j', gocui.ModNone, handlers.CursorDown)
+	bind(views.ViewDetails, 'k', gocui.ModNone, handlers.CursorUp)
+	bind(views.ViewDetails, gocui.KeyEnter, gocui.ModNone, handlers.DownloadSelected)
+
+	bind(views.ViewTorrents, 'j', gocui.ModNone, handlers.CursorDown)
+	bind(views.ViewTorrents, 'k', gocui.ModNone, handlers.CursorUp)
+	bind(views.ViewTorrents, gocui.KeyEnter, gocui.ModNone, handlers.FileContentsHandler)
+	bind(views.ViewTorrents, '/', gocui.ModNone, handlers.FocusSearchBar)
+	bind(views.ViewDetails, '/', gocui.ModNone, handlers.FocusSearchBar)
+	bind(views.ViewSearch, gocui.KeyEnter, gocui.ModNone, handlers.SearchKeyPress)
 	bind("", gocui.KeyCtrlC, gocui.ModNone, handlers.CopyDownloadLink)
 	bind("", gocui.KeyCtrlD, gocui.ModNone, handlers.DownloadSelected)
 	bind("", gocui.KeyCtrlA, gocui.ModNone, handlers.ShowAddMagnetModal)
@@ -35,6 +39,6 @@ func Keybindings(g *gocui.Gui) error {
 	bind("", gocui.KeyCtrlX, gocui.ModNone, handlers.ShowSetTokenModal)
 	bind("", gocui.KeyCtrlQ, gocui.ModNone, handlers.Quit)
 	bind("", gocui.KeyTab, gocui.ModNone, handlers.CycleViewHandler)
-	bind("torrents", '?', gocui.ModNone, handlers.ShowHelpModal)
+	bind(views.ViewTorrents, '?', gocui.ModNone, handlers.ShowHelpModal)
 	return nil
 }

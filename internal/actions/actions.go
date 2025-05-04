@@ -34,6 +34,7 @@ var (
 	UserDownloads   []models.Torrent
 	DownloadMap     = make(map[string]models.Torrent)
 	ActiveDownloads []models.ActiveDownload
+	FilesMap        = make(map[string]models.Download)
 )
 
 func newRequest(method, urlStr string, body io.Reader) (*http.Request, error) {
@@ -191,7 +192,7 @@ func GetTorrentStatus(g *gocui.Gui, v *gocui.View) error {
 	)
 	return err
 }
-func DownloadFile(torrent models.Torrent) bool {
+func DownloadFile(torrent models.Download) bool {
 	path := fmt.Sprintf("%s%s", config.DownloadPath(), torrent.Filename)
 	out, err := os.Create(path)
 	if err != nil {
@@ -200,7 +201,7 @@ func DownloadFile(torrent models.Torrent) bool {
 	}
 	defer out.Close()
 
-	resp, err := http.Get("")
+	resp, err := http.Get(torrent.Download)
 	if err != nil {
 		logs.LogEvent(err)
 		return false
@@ -217,12 +218,11 @@ func DownloadFile(torrent models.Torrent) bool {
 	return true
 }
 
-func GetTorrentContents(g *gocui.Gui, v *gocui.View) []models.Download {
+func GetTorrentContents(g *gocui.Gui, v *gocui.View) map[string]models.Download {
 	_, cy := v.Cursor()
 	line, _ := v.Line(cy)
 
 	var torrentFile models.Download
-	var torrentFiles []models.Download
 	links := DownloadMap[line].Links
 	infoView := views.GetView(g, views.ViewInfo)
 	now := logs.GetNow()
@@ -237,10 +237,10 @@ func GetTorrentContents(g *gocui.Gui, v *gocui.View) []models.Download {
 			logs.LogEvent(err)
 			continue
 		}
-		torrentFiles = append(torrentFiles, torrentFile)
+		FilesMap[torrentFile.Filename] = torrentFile
 	}
 
-	return torrentFiles
+	return FilesMap
 }
 
 func GetUserTorrents() map[string]models.Torrent {
@@ -273,7 +273,6 @@ func GetUserTorrents() map[string]models.Torrent {
 
 	for _, item := range list {
 		result[item.Filename] = item
-		log.Println(item)
 	}
 	DownloadMap = result
 	UserDownloads = list

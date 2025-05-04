@@ -14,7 +14,11 @@ func CursorDown(g *gocui.Gui, v *gocui.View) error {
 			return err
 		}
 	}
-	return UpdateDetails(g, v)
+	currentView := g.CurrentView()
+	if currentView.Name() == "torrents" {
+		return UpdateDetails(g, v)
+	}
+	return nil
 }
 
 func CursorUp(g *gocui.Gui, v *gocui.View) error {
@@ -24,7 +28,13 @@ func CursorUp(g *gocui.Gui, v *gocui.View) error {
 			return err
 		}
 	}
-	return UpdateDetails(g, v)
+
+	currentView := g.CurrentView()
+	if currentView.Name() == "torrents" {
+
+		return UpdateDetails(g, v)
+	}
+	return nil
 }
 
 func FocusSearchBar(g *gocui.Gui, v *gocui.View) error {

@@ -9,7 +9,7 @@ import (
 	"github.com/jroimartin/gocui"
 )
 
-func RefreshTorrentsView(g *gocui.Gui, v *gocui.View, fileList []models.Download) {
+func RefreshTorrentsView(g *gocui.Gui, v *gocui.View, fileMap map[string]models.Download) {
 	log.Println("Refreshing")
 
 	g.Update(func(g *gocui.Gui) error {
@@ -20,9 +20,9 @@ func RefreshTorrentsView(g *gocui.Gui, v *gocui.View, fileList []models.Download
 		}
 
 		detailsView.Clear()
-
-		for _, file := range fileList {
-			fmt.Fprintln(detailsView, file.Filename)
+		detailsView.Highlight = true
+		for key, _ := range fileMap {
+			fmt.Fprintln(detailsView, key)
 		}
 
 		_, _ = g.SetCurrentView(views.ViewDetails)

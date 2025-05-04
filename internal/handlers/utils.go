@@ -23,6 +23,7 @@ func PopulateViews(g *gocui.Gui) {
 		fmt.Fprintln(activeView, item.ID)
 	}
 }
+
 func UpdateDetails(g *gocui.Gui, v *gocui.View) error {
 	_, cy := v.Cursor()
 	line, err := v.Line(cy)
@@ -35,6 +36,7 @@ func UpdateDetails(g *gocui.Gui, v *gocui.View) error {
 		return err
 	}
 	mainView.Clear()
+	mainView.Highlight = false
 
 	torrentItem, ok := actions.DownloadMap[strings.TrimSpace(line)]
 	if !ok {
