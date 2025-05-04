@@ -23,8 +23,8 @@ func HandleAddMagnetLink(g *gocui.Gui, input string) error {
 
 	id, err := actions.SendLinkToAPI(input)
 	if err != nil {
-		logui.LogError(info, now, "Failed to add magnet", err)
-		return err
+		logui.LogError(info, now, "", err)
+		return views.CloseView(g, views.ViewAddMagnet)
 	}
 	logui.LogInfo(info, now, fmt.Sprintf("Magnet added: %s", id))
 

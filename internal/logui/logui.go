@@ -11,5 +11,5 @@ func LogInfo(v *gocui.View, time string, errorString string) {
 }
 
 func LogError(v *gocui.View, time string, errorString string, err error) {
-	fmt.Fprintf(v, "\n[ %s ] %s\n%s", time, errorString, err)
+	fmt.Fprintf(v, "\n[ %s ]\n%s %s", time, errorString, err)
 }
