@@ -13,6 +13,20 @@ import (
 	"lazydebrid/internal/views"
 )
 
+func DownloadAll(g *gocui.Gui, v *gocui.View) error {
+
+	for _, downloadItem := range actions.FilesMap {
+		logui.UpdateUILog(g, views.ViewInfo, fmt.Sprintf("Downloading %s to %s", downloadItem.Filename, config.DownloadPath()))
+		go func(item models.Download) {
+			if actions.DownloadFile(item) {
+				logui.UpdateUILog(g, views.ViewInfo, fmt.Sprintf("Downloaded %s to %s", item.Filename, config.DownloadPath()))
+			}
+		}(downloadItem)
+	}
+
+	return nil
+}
+
 func DownloadSelectedFile(g *gocui.Gui, v *gocui.View) error {
 	_, cy := v.Cursor()
 	line, err := v.Line(cy)

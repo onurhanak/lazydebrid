@@ -26,6 +26,8 @@ func Keybindings(g *gocui.Gui) error {
 	bind(views.ViewDetails, 'j', gocui.ModNone, handlers.CursorDown)
 	bind(views.ViewDetails, 'k', gocui.ModNone, handlers.CursorUp)
 	bind(views.ViewDetails, gocui.KeyEnter, gocui.ModNone, handlers.DownloadSelectedFile)
+	bind(views.ViewDetails, 'd', gocui.ModNone, handlers.DownloadSelectedFile)
+	bind(views.ViewDetails, 'D', gocui.ModNone, handlers.DownloadAll)
 	bind(views.ViewDetails, 'y', gocui.ModNone, handlers.CopyDownloadLink)
 	bind(views.ViewDetails, '/', gocui.ModNone, handlers.FocusSearchBar)
 	bind(views.ViewDetails, '?', gocui.ModNone, handlers.ShowHelpModal)
