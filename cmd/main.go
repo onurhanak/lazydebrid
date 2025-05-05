@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"lazydebrid/internal/actions"
 	"lazydebrid/internal/bindings"
 	"lazydebrid/internal/config"
@@ -23,10 +24,11 @@ func init() {
 
 func main() {
 	log.Println("Starting LazyDebrid...")
-	handlers.HandleFirstRun()
+	config.HandleFirstRun()
 
 	err := config.LoadUserSettings()
 	if err != nil {
+		fmt.Println(err)
 		log.Fatalln("Could not not load user settings, bailing.")
 	}
 	actions.GetUserTorrents()

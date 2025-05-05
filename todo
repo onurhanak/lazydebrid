@@ -3,3 +3,4 @@ Simply logui
 on download finish we need to update torrentsview
 add progress for downloads?
 probably need a map for activedownloads not a slice
+handle authentiication errors and such

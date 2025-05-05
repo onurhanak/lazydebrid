@@ -9,6 +9,14 @@ import (
 	"path/filepath"
 )
 
+func HandleFirstRun() {
+	if CheckFirstRun() {
+		if err := SetupConfigFromUserInput(); err != nil {
+			fmt.Println("Failed to save config:", err)
+		}
+	}
+}
+
 func CheckFirstRun() bool {
 	lazyDebridConfigPath, lazyDebridFolderPath, err := ConfigPath()
 	if err != nil {
@@ -43,6 +51,9 @@ func SetupConfigFromUserInput() error {
 	reader := bufio.NewReader(os.Stdin)
 	apiToken, _ := reader.ReadString('\n')
 	apiToken = trimNewline(apiToken)
+	if len(apiToken) <= 0 {
+		return fmt.Errorf("API token cannot be empty.")
+	}
 
 	fmt.Print("Enter download path (leave empty for default $HOME/Downloads): ")
 	downloadPath, _ := reader.ReadString('\n')
