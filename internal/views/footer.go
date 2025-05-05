@@ -7,10 +7,10 @@ import (
 	"github.com/jroimartin/gocui"
 )
 
-func updateFooter(g *gocui.Gui, name string) error {
-	keysView, err := g.View("footer")
+func UpdateFooter(g *gocui.Gui, name string) error {
+	keysView, err := g.View(ViewFooter)
 	if err != nil {
-		logs.LogEvent(err)
+		logs.LogEvent(fmt.Errorf("Cannot get keysView: %s", err))
 		return err
 	}
 	keysView.Clear()

@@ -2,7 +2,7 @@ package views
 
 import (
 	"fmt"
-	"log"
+	"lazydebrid/internal/logs"
 	"strings"
 
 	"github.com/jroimartin/gocui"
@@ -20,14 +20,13 @@ func ShowModal(g *gocui.Gui, name, title, content string, onSubmit InputHandler)
 
 	v, err := g.SetView(name, x0, y0, x1, y1)
 	if err != nil && err != gocui.ErrUnknownView {
-		log.Println("error")
+		logs.LogEvent(fmt.Errorf("Cannot set view to %s: %s", name, err))
 		return err
 	}
 
 	v.Title = title
 	v.Wrap = true
 	v.Editable = (name != ViewHelp)
-	log.Println("Editable:", v.Editable)
 
 	if name == ViewHelp {
 		v.Clear()

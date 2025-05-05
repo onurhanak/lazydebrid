@@ -19,7 +19,7 @@ const (
 )
 
 var (
-	Views = []string{ViewSearch, ViewTorrents, ViewDetails, ViewActiveTorrents, ViewInfo}
+	Views = []string{ViewSearch, ViewTorrents, ViewDetails, ViewActiveTorrents, ViewInfo, ViewFooter}
 )
 
 var OnLayoutReady func(*gocui.Gui)
@@ -48,7 +48,7 @@ func Layout(g *gocui.Gui) error {
 		v.Editable = true
 	}
 
-	if torrentsView, err := g.SetView("torrents", 0, 3, splitX, maxY-4); err != nil {
+	if torrentsView, err := g.SetView(ViewTorrents, 0, 3, splitX, maxY-4); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
@@ -70,13 +70,13 @@ func Layout(g *gocui.Gui) error {
 			return err
 		}
 		_, err = g.SetCurrentView(ViewTorrents)
-		updateFooter(g, ViewTorrents)
 		if err != nil {
 			return err
 		}
+
 	}
 
-	if mainView, err := g.SetView("details", splitX+1, detailsTop, maxX-1, detailsBottom); err != nil && err != gocui.ErrUnknownView {
+	if mainView, err := g.SetView(ViewDetails, splitX+1, detailsTop, maxX-1, detailsBottom); err != nil && err != gocui.ErrUnknownView {
 		return err
 	} else if err == nil {
 		mainView.Title = "Torrent Details"
@@ -106,7 +106,7 @@ func Layout(g *gocui.Gui) error {
 		}
 	}
 
-	if infoView, err := g.SetView("info", splitX+1, infoTop, maxX-1, infoBottom); err != nil && err != gocui.ErrUnknownView {
+	if infoView, err := g.SetView(ViewInfo, splitX+1, infoTop, maxX-1, infoBottom); err != nil && err != gocui.ErrUnknownView {
 		return err
 	} else if err == nil {
 		infoView.Title = "Log"
@@ -114,7 +114,7 @@ func Layout(g *gocui.Gui) error {
 		infoView.Autoscroll = true
 	}
 
-	if footerView, err := g.SetView("footer", 0, infoBottom+1, maxX-1, infoBottom+3); err != nil && err != gocui.ErrUnknownView {
+	if footerView, err := g.SetView(ViewFooter, 0, infoBottom+1, maxX-1, infoBottom+3); err != nil && err != gocui.ErrUnknownView {
 		return err
 	} else if err == nil {
 		footerView.Frame = true

@@ -3,7 +3,6 @@ package config
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -56,8 +55,6 @@ func SaveSetting(key, value string) error {
 	if err != nil {
 		return err
 	}
-
-	fmt.Println(key, value)
 	// reload in case there is manual modification
 	data, _ := os.ReadFile(lazyDebridConfigPath)
 	_ = json.Unmarshal(data, &settings)
@@ -68,6 +65,7 @@ func SaveSetting(key, value string) error {
 	if err != nil {
 		return err
 	}
+
 	return os.WriteFile(lazyDebridConfigPath, content, 0644)
 }
 

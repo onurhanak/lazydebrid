@@ -14,14 +14,26 @@ func PopulateViews(g *gocui.Gui) {
 	torrentsView := views.GetView(g, views.ViewTorrents)
 	torrentsView.Clear()
 	for _, item := range actions.UserDownloads {
-		fmt.Fprintln(torrentsView, item.Filename)
+		if item.Status == "downloaded" {
+			fmt.Fprintln(torrentsView, strings.TrimSpace(item.Filename))
+		}
 	}
 
 	activeView := views.GetView(g, views.ViewActiveTorrents)
 	activeView.Clear()
+
+	// Add active downloads from the API
+	for _, item := range actions.UserDownloads {
+		if item.Status == "queued" || item.Status == "downloading" {
+			fmt.Fprintln(activeView, item.ID)
+		}
+	}
+	// Add active downloads from the present session
 	for _, item := range actions.ActiveDownloads {
 		fmt.Fprintln(activeView, item.ID)
 	}
+
+	views.UpdateFooter(g, views.ViewFooter)
 }
 
 func UpdateDetails(g *gocui.Gui, v *gocui.View) error {

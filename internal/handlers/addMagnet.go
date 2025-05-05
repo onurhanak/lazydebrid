@@ -24,15 +24,17 @@ func HandleAddMagnetLink(g *gocui.Gui, input string) error {
 	id, err := actions.SendLinkToAPI(input)
 	if err != nil {
 		logui.LogError(info, now, "", err)
-		return views.CloseView(g, views.ViewAddMagnet)
+		return err
 	}
 	logui.LogInfo(info, now, fmt.Sprintf("Magnet added: %s", id))
 
 	if actions.AddFilesToDebrid(id) {
 		logui.LogInfo(info, now, fmt.Sprintf("All files selected for download: %s", id))
+		// update activeTorrentsView
+		PopulateViews(g)
 
 	} else {
 		logui.LogError(info, now, fmt.Sprintf("Failed to select files for %s", id), nil)
 	}
-	return views.CloseView(g, views.ViewAddMagnet)
+	return nil
 }

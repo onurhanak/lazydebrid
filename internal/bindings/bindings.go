@@ -17,7 +17,7 @@ func Keybindings(g *gocui.Gui) error {
 		}
 	}
 
-	bind(views.ViewActiveTorrents, 'd', gocui.ModNone, actions.DeleteTorrent)
+	bind(views.ViewActiveTorrents, 'd', gocui.ModNone, handlers.HandleDeleteTorrent)
 	bind(views.ViewActiveTorrents, 's', gocui.ModNone, actions.GetTorrentStatus)
 	bind(views.ViewActiveTorrents, 'j', gocui.ModNone, handlers.CursorDown)
 	bind(views.ViewActiveTorrents, 'k', gocui.ModNone, handlers.CursorUp)

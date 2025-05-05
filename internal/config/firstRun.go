@@ -12,19 +12,20 @@ import (
 func CheckFirstRun() bool {
 	lazyDebridConfigPath, lazyDebridFolderPath, err := ConfigPath()
 	if err != nil {
-		logs.LogEvent(err)
+		logs.LogEvent(fmt.Errorf("Cannot read config: %s", err))
 		return false
 	}
 
 	if _, err := os.Stat(lazyDebridConfigPath); os.IsNotExist(err) {
 		if err := os.MkdirAll(lazyDebridFolderPath, os.ModePerm); err != nil {
-			logs.LogEvent(err)
+
+			logs.LogEvent(fmt.Errorf("Cannot create config folder: %s", err))
 			return false
 		}
 
 		file, err := os.Create(lazyDebridConfigPath)
 		if err != nil {
-			logs.LogEvent(err)
+			logs.LogEvent(fmt.Errorf("Cannot create config file: %s", err))
 			return false
 		}
 		defer file.Close()

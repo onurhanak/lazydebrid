@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"lazydebrid/internal/config"
@@ -92,6 +93,7 @@ func DeleteTorrent(g *gocui.Gui, v *gocui.View) error {
 	now := logs.GetNow()
 
 	if resp.StatusCode == http.StatusNoContent {
+		ActiveDownloads = RemoveItem(ActiveDownloads, line)
 		logui.LogInfo(infoView, now, fmt.Sprintf("Deleted torrent: %s", line))
 	} else {
 		msg, _ := io.ReadAll(resp.Body)
@@ -199,7 +201,7 @@ func GetTorrentStatus(g *gocui.Gui, v *gocui.View) error {
 	return err
 }
 func DownloadFile(torrent models.Download) bool {
-	path := fmt.Sprintf("%s%s", config.DownloadPath(), torrent.Filename)
+	path := filepath.Join(config.DownloadPath(), torrent.Filename)
 	out, err := os.Create(path)
 	if err != nil {
 		logs.LogEvent(err)
@@ -235,7 +237,7 @@ func GetSelectedTorrentID(v *gocui.View) (string, error) {
 func GetTorrentContents(g *gocui.Gui, v *gocui.View) map[string]models.Download {
 	id, err := GetSelectedTorrentID(v)
 	if err != nil {
-		log.Println("Selection error:", err)
+		logs.LogEvent(fmt.Errorf("Selection error: %s", err))
 		return nil
 	}
 
@@ -269,7 +271,6 @@ func GetTorrentContents(g *gocui.Gui, v *gocui.View) map[string]models.Download 
 			} else {
 				errorLog = append(errorLog, "Unmarshal failed and no API error given")
 			}
-			log.Println("log")
 			log.Println(errorLog)
 			continue
 		}

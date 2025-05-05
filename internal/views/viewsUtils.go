@@ -23,10 +23,12 @@ func LogViewError(v *gocui.View, time string, errorString string, err error) {
 
 func CloseView(g *gocui.Gui, name string) error {
 	if err := g.DeleteView(name); err != nil {
-		log.Println(err)
+		log.Println(fmt.Errorf("Cannot delete view %s: %s", name, err))
 	}
 	_, err := g.SetCurrentView(ViewTorrents)
 	if err != nil {
+
+		logs.LogEvent(fmt.Errorf("Cannot set current view to %s: %s", name, err))
 		logs.LogEvent(err)
 	}
 	return err

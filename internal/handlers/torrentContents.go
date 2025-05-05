@@ -7,6 +7,7 @@ import (
 	"lazydebrid/internal/logui"
 	"lazydebrid/internal/models"
 	"lazydebrid/internal/views"
+	"strings"
 
 	"github.com/jroimartin/gocui"
 )
@@ -23,8 +24,8 @@ func showTorrentFiles(g *gocui.Gui, v *gocui.View, fileMap map[string]models.Dow
 
 		detailsView.Clear()
 		detailsView.Highlight = true
-		for key, _ := range fileMap {
-			fmt.Fprintln(detailsView, key)
+		for key := range fileMap {
+			fmt.Fprintln(detailsView, strings.TrimSpace(key))
 		}
 
 		_, _ = g.SetCurrentView(views.ViewDetails)

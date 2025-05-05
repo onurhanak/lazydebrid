@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"log"
-
 	"lazydebrid/internal/views"
 
 	"github.com/jroimartin/gocui"
@@ -17,7 +15,6 @@ func DeleteCurrentView(g *gocui.Gui, v *gocui.View) error {
 	if currentView == nil {
 		return nil
 	}
-	log.Println(currentView.Name())
 
 	switch currentView.Name() {
 	case views.ViewTorrents, views.ViewDetails, views.ViewInfo, views.ViewFooter, views.ViewActiveTorrents, views.ViewSearch:
