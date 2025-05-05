@@ -15,15 +15,7 @@ func ShowModal(g *gocui.Gui, name, title, content string, onSubmit InputHandler)
 
 	// adjust dimension based on content
 	lines := strings.Count(content, "\n") + 2
-	maxContentWidth := 0
-	for line := range strings.SplitSeq(content, "\n") {
-		if len(line) > maxContentWidth {
-			maxContentWidth = len(line)
-		}
-	}
-	if maxContentWidth > 60 {
-		maxContentWidth = 60
-	}
+	maxContentWidth := 60
 	w := maxContentWidth + 4
 	h := lines + 4
 
