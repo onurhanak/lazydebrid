@@ -12,56 +12,51 @@ import (
 	"lazydebrid/internal/models"
 )
 
-func DownloadAll(g *gocui.Gui, v *gocui.View) error {
+func startDownload(g *gocui.Gui, item models.Download) {
+	log := func(msg string, success bool, err error) {
+		logui.UpdateUILog(g, msg, success, err)
+	}
 
-	for _, downloadItem := range actions.FilesMap {
-		logui.UpdateUILog(g, fmt.Sprintf("Downloading %s to %s", downloadItem.Filename, config.DownloadPath()))
-		go func(item models.Download) {
-			if actions.DownloadFile(item) {
-				logui.UpdateUILog(g, fmt.Sprintf("Downloaded %s to %s", item.Filename, config.DownloadPath()))
-			}
-		}(downloadItem)
+	log(fmt.Sprintf("Downloading %s to %s", item.Filename, config.DownloadPath()), true, nil)
+
+	if actions.DownloadFile(item) {
+		log(fmt.Sprintf("Downloaded %s to %s", item.Filename, config.DownloadPath()), true, nil)
+	} else {
+		log(fmt.Sprintf("Failed to download %s", item.Filename), false, fmt.Errorf("download failed"))
+	}
+}
+
+func DownloadAll(g *gocui.Gui, _ *gocui.View) error {
+
+	for _, item := range actions.FilesMap {
+		go func(dlItem models.Download) {
+			startDownload(g, dlItem)
+		}(item)
 	}
 
 	return nil
 }
 
 func DownloadSelectedFile(g *gocui.Gui, v *gocui.View) error {
-	_, cy := v.Cursor()
-	line, err := v.Line(cy)
+	item, err := getSelectedItem(v)
 	if err != nil {
 		return err
 	}
-
-	downloadItem, ok := actions.FilesMap[line]
-	if !ok {
-		return fmt.Errorf("no download item found for selected line")
-	}
-
-	logui.UpdateUILog(g, fmt.Sprintf("Downloading %s to %s", downloadItem.Filename, config.DownloadPath()))
-	go func(item models.Download) {
-		if actions.DownloadFile(item) {
-			logui.UpdateUILog(g, fmt.Sprintf("Downloaded %s to %s", item.Filename, config.DownloadPath()))
-		}
-	}(downloadItem)
-
+	go startDownload(g, item)
 	return nil
 }
 
 func CopyDownloadLink(g *gocui.Gui, v *gocui.View) error {
-	_, cy := v.Cursor()
-	line, err := v.Line(cy)
+	item, err := getSelectedItem(v)
 	if err != nil {
 		return err
 	}
 
-	item, ok := actions.FilesMap[line]
-	if !ok {
-		return fmt.Errorf("no download link found")
+	if err := clipboard.WriteAll(item.Download); err != nil {
+		logui.UpdateUILog(g, fmt.Sprintf("Failed to copy download link: %s", err), false, err)
+		return err
 	}
 
-	if err := clipboard.WriteAll(item.Download); err != nil {
-		logui.UpdateUILog(g, fmt.Sprintf("Failed to copy download link: %s", err))
-	}
+	logui.UpdateUILog(g, fmt.Sprintf("Copied download link for %s", item.Filename), true, nil)
 	return nil
 }

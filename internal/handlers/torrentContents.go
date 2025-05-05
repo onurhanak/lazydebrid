@@ -33,7 +33,7 @@ func showTorrentFiles(g *gocui.Gui, v *gocui.View, fileMap map[string]models.Dow
 	})
 }
 func FileContentsHandler(g *gocui.Gui, v *gocui.View) error {
-	logui.UpdateUILog(g, "Getting file contents...")
+	logui.UpdateUILog(g, "Getting file contents...", true, nil)
 
 	go func() {
 		torrentFiles := actions.GetTorrentContents(g, v)

@@ -89,15 +89,13 @@ func DeleteTorrent(g *gocui.Gui, v *gocui.View) error {
 	}
 	defer resp.Body.Close()
 
-	infoView := views.GetView(g, views.ViewInfo)
-	now := logs.GetNow()
-
 	if resp.StatusCode == http.StatusNoContent {
 		ActiveDownloads = RemoveItem(ActiveDownloads, line)
-		logui.LogInfo(infoView, now, fmt.Sprintf("Deleted torrent: %s", line))
+		logui.UpdateUILog(g, fmt.Sprintf("Deleted torrent: %s", line), true, nil)
 	} else {
 		msg, _ := io.ReadAll(resp.Body)
-		logui.LogError(infoView, now, fmt.Sprintf("Failed to delete %s: %s", line, msg), nil)
+		logui.UpdateUILog(g, fmt.Sprintf("Failed to delete torrent: %s\nError: %s", line, msg), false, nil)
+
 	}
 
 	return nil
@@ -180,15 +178,16 @@ func GetTorrentStatus(g *gocui.Gui, v *gocui.View) error {
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		logui.LogError(views.GetView(g, views.ViewInfo), logs.GetNow(),
-			fmt.Sprintf("Failed to get torrent status: HTTP %d\n%s", resp.StatusCode, string(body)), nil)
+		logui.UpdateUILog(
+			g,
+			fmt.Sprintf("Failed to get torrent status: HTTP %d\n%s", resp.StatusCode, string(body)), false, nil)
 		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
 	var status models.Torrent
 	if err := json.NewDecoder(resp.Body).Decode(&status); err != nil {
 		logs.LogEvent(err)
-		logui.LogError(views.GetView(g, views.ViewInfo), logs.GetNow(), "Failed to decode torrent status", err)
+		logui.UpdateUILog(g, "Failed to decode torrent status", false, err)
 		return err
 	}
 
@@ -284,7 +283,7 @@ func GetTorrentContents(g *gocui.Gui, v *gocui.View) map[string]models.Download 
 		msg := strings.Join(errorLog, "; ")
 		log.Println(msg)
 		g.Update(func(g *gocui.Gui) error {
-			logui.UpdateUILog(g, msg)
+			logui.UpdateUILog(g, msg, false, nil)
 			return nil
 		})
 	}
