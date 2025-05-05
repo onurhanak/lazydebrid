@@ -18,7 +18,7 @@ func CycleFocusToNextView(g *gocui.Gui) error {
 		return err
 	}
 
-	err := UpdateFooter(g, name)
+	err := UpdateFooter(g)
 	if err != nil {
 		return err
 	}

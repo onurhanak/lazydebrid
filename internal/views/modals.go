@@ -12,7 +12,21 @@ type InputHandler func(string) error
 
 func ShowModal(g *gocui.Gui, name, title, content string, onSubmit InputHandler) error {
 	maxX, maxY := g.Size()
-	w, h := maxX/2, 5
+
+	// adjust dimension based on content
+	lines := strings.Count(content, "\n") + 2
+	maxContentWidth := 0
+	for line := range strings.SplitSeq(content, "\n") {
+		if len(line) > maxContentWidth {
+			maxContentWidth = len(line)
+		}
+	}
+	if maxContentWidth > 60 {
+		maxContentWidth = 60
+	}
+	w := maxContentWidth + 4
+	h := lines + 4
+
 	x0 := (maxX - w) / 2
 	y0 := (maxY - h) / 2
 	x1 := x0 + w
@@ -41,6 +55,16 @@ func ShowModal(g *gocui.Gui, name, title, content string, onSubmit InputHandler)
 		return onSubmit(input)
 	})
 
+	_ = g.SetKeybinding(name, gocui.KeyCtrlC, gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
+		_, _ = g.SetCurrentView(ViewTorrents)
+		_ = g.DeleteView(name)
+		return nil
+	})
+
 	_, err = g.SetCurrentView(name)
+	g.Update(func(g *gocui.Gui) error {
+		UpdateFooter(g)
+		return nil
+	})
 	return err
 }

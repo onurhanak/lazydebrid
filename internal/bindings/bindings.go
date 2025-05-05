@@ -21,10 +21,14 @@ func Keybindings(g *gocui.Gui) error {
 	bind(views.ViewActiveTorrents, 's', gocui.ModNone, actions.GetTorrentStatus)
 	bind(views.ViewActiveTorrents, 'j', gocui.ModNone, handlers.CursorDown)
 	bind(views.ViewActiveTorrents, 'k', gocui.ModNone, handlers.CursorUp)
+	bind(views.ViewActiveTorrents, gocui.KeyArrowDown, gocui.ModNone, handlers.CursorDown)
+	bind(views.ViewActiveTorrents, gocui.KeyArrowUp, gocui.ModNone, handlers.CursorUp)
 	bind(views.ViewActiveTorrents, '?', gocui.ModNone, handlers.ShowHelpModal)
 
 	bind(views.ViewDetails, 'j', gocui.ModNone, handlers.CursorDown)
 	bind(views.ViewDetails, 'k', gocui.ModNone, handlers.CursorUp)
+	bind(views.ViewDetails, gocui.KeyArrowDown, gocui.ModNone, handlers.CursorDown)
+	bind(views.ViewDetails, gocui.KeyArrowUp, gocui.ModNone, handlers.CursorUp)
 	bind(views.ViewDetails, gocui.KeyEnter, gocui.ModNone, handlers.DownloadSelectedFile)
 	bind(views.ViewDetails, 'd', gocui.ModNone, handlers.DownloadSelectedFile)
 	bind(views.ViewDetails, 'D', gocui.ModNone, handlers.DownloadAll)
@@ -34,11 +38,15 @@ func Keybindings(g *gocui.Gui) error {
 
 	bind(views.ViewTorrents, 'j', gocui.ModNone, handlers.CursorDown)
 	bind(views.ViewTorrents, 'k', gocui.ModNone, handlers.CursorUp)
+	bind(views.ViewTorrents, gocui.KeyArrowDown, gocui.ModNone, handlers.CursorDown)
+	bind(views.ViewTorrents, gocui.KeyArrowUp, gocui.ModNone, handlers.CursorUp)
 	bind(views.ViewTorrents, gocui.KeyEnter, gocui.ModNone, handlers.FileContentsHandler)
 	bind(views.ViewTorrents, '/', gocui.ModNone, handlers.FocusSearchBar)
 	bind(views.ViewTorrents, '?', gocui.ModNone, handlers.ShowHelpModal)
 
 	bind(views.ViewSearch, gocui.KeyEnter, gocui.ModNone, handlers.SearchKeyPress)
+
+	bind(views.ViewInfo, '?', gocui.ModNone, handlers.ShowHelpModal)
 
 	bind("", gocui.KeyCtrlA, gocui.ModNone, handlers.ShowAddMagnetModal)
 	bind("", gocui.KeyCtrlP, gocui.ModNone, handlers.ShowSetPathModal)

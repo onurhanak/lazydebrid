@@ -33,7 +33,7 @@ func PopulateViews(g *gocui.Gui) {
 		fmt.Fprintln(activeView, item.ID)
 	}
 
-	views.UpdateFooter(g, views.ViewFooter)
+	views.UpdateFooter(g)
 }
 
 func UpdateDetails(g *gocui.Gui, v *gocui.View) error {

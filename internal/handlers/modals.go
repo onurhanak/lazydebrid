@@ -22,7 +22,23 @@ func ShowSetTokenModal(g *gocui.Gui, v *gocui.View) error {
 }
 
 func ShowHelpModal(g *gocui.Gui, v *gocui.View) error {
-	content := "TAB: Switch | ↑↓: Navigate | ENTER: Download | /: Search\n^A: Add Magnet | ^C: Copy Link | ^P: Set Path\n^X: Set API Key | ^Q: Quit"
+	content := `
+  ── Navigation ─────────────
+  ↑ ↓       Move cursor
+  TAB       Switch view
+  /         Focus search
+
+  ── Actions ────────────────
+  ENTER     Download selected
+  ^C        Copy download link
+  D         Download all files
+
+  ── Management ─────────────
+  ^A        Add magnet link
+  ^P        Set download path
+  ^X        Set API key
+  ^Q        Quit application
+`
 	return views.ShowModal(g, views.ViewHelp, "Shortcuts", content, func(string) error { return nil })
 }
 

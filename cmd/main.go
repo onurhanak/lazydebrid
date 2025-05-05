@@ -10,6 +10,7 @@ import (
 	"os"
 
 	"github.com/jroimartin/gocui"
+	"github.com/nsf/termbox-go"
 )
 
 func init() {
@@ -31,6 +32,7 @@ func main() {
 	}
 	actions.GetUserTorrents()
 	g, err := gocui.NewGui(gocui.OutputNormal)
+	termbox.SetInputMode(termbox.InputEsc)
 	if err != nil {
 		log.Panicln(err)
 	}
