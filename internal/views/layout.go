@@ -71,9 +71,6 @@ func Layout(g *gocui.Gui) error {
 		if err != nil {
 			return err
 		}
-		if err != nil {
-			return err
-		}
 
 	}
 
