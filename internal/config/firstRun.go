@@ -49,7 +49,7 @@ func SetupConfigFromUserInput() error {
 
 	if downloadPath == "" {
 		usr, _ := user.Current()
-		downloadPath = filepath.Join(usr.HomeDir, "Downloads")
+		downloadPath = filepath.Join(usr.HomeDir, "Downloads/")
 	}
 
 	if err := SaveSetting("apiToken", apiToken); err != nil {
