@@ -41,14 +41,14 @@ func main() {
 		log.Panicln(err)
 	}
 
-	g.Update(func(g *gocui.Gui) error {
-		handlers.PopulateViews(g)
-		v, err := g.View("torrents")
-		if err != nil {
-			return err
-		}
-		return handlers.UpdateDetails(g, v)
-	})
+	// g.Update(func(g *gocui.Gui) error {
+	// 	handlers.PopulateViews(g)
+	// 	v, err := g.View("torrents")
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	return handlers.UpdateDetails(g, v)
+	// })
 
 	// delay populate views until views are ready
 	// otherwise active torrents does not show
