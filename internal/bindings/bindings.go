@@ -52,7 +52,7 @@ func Keybindings(g *gocui.Gui) error {
 	bind("", gocui.KeyCtrlP, gocui.ModNone, handlers.ShowSetPathModal)
 	bind("", gocui.KeyCtrlX, gocui.ModNone, handlers.ShowSetTokenModal)
 	bind("", gocui.KeyCtrlQ, gocui.ModNone, handlers.Quit)
-	bind("", gocui.KeyTab, gocui.ModNone, views.CycleViewHandler)
-
+	bind("", gocui.KeyTab, gocui.ModNone, views.CycleFocusToNextView)
+	bind("", gocui.KeyBackspace2, gocui.ModNone, views.CycleFcousToPreviousView)
 	return nil
 }

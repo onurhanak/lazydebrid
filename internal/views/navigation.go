@@ -58,11 +58,24 @@ func FocusSearchBar(g *gocui.Gui, v *gocui.View) error {
 	return err
 }
 
-func CycleViewHandler(g *gocui.Gui, v *gocui.View) error {
-	return CycleFocusToNextView(g)
-}
-func CycleFocusToNextView(g *gocui.Gui) error {
+func CycleFocusToNextView(g *gocui.Gui, v *gocui.View) error {
 	currentViewIdx = (currentViewIdx + 1) % len(Views)
+	name := Views[currentViewIdx]
+
+	if _, err := g.SetCurrentView(name); err != nil {
+		logs.LogEvent(fmt.Errorf("Cannot set current view to %s: %s", name, err))
+		return err
+	}
+
+	err := UpdateFooter(g)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func CycleFcousToPreviousView(g *gocui.Gui, v *gocui.View) error {
+	currentViewIdx = (currentViewIdx - 1) % len(Views)
 	name := Views[currentViewIdx]
 
 	if _, err := g.SetCurrentView(name); err != nil {
