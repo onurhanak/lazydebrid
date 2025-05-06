@@ -40,7 +40,7 @@ func Keybindings(g *gocui.Gui) error {
 	bind(views.ViewTorrents, 'k', gocui.ModNone, views.CursorUp)
 	bind(views.ViewTorrents, gocui.KeyArrowDown, gocui.ModNone, views.CursorDown)
 	bind(views.ViewTorrents, gocui.KeyArrowUp, gocui.ModNone, views.CursorUp)
-	bind(views.ViewTorrents, gocui.KeyEnter, gocui.ModNone, handlers.FileContentsHandler)
+	bind(views.ViewTorrents, gocui.KeyEnter, gocui.ModNone, handlers.HandleTorrentFileContents)
 	bind(views.ViewTorrents, '/', gocui.ModNone, views.FocusSearchBar)
 	bind(views.ViewTorrents, '?', gocui.ModNone, handlers.ShowHelpModal)
 
