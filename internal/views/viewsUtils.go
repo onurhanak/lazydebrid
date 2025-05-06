@@ -76,6 +76,7 @@ func PopulateViews(g *gocui.Gui) {
 	torrentsView := GetView(g, ViewTorrents)
 	torrentsView.Clear()
 
+	// temporary. needs a centralized way that uses the error model
 	if len(data.UserDownloads) == 0 {
 		UpdateUILog(g, "API returned no torrents, is your API token correct?", true, nil)
 	}
