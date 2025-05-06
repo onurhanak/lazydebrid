@@ -5,7 +5,6 @@ import (
 	"lazydebrid/internal/actions"
 	"lazydebrid/internal/bindings"
 	"lazydebrid/internal/config"
-	"lazydebrid/internal/handlers"
 	"lazydebrid/internal/views"
 	"log"
 	"os"
@@ -54,7 +53,7 @@ func main() {
 
 	// delay populate views until views are ready
 	// otherwise active torrents does not show
-	views.OnLayoutReady = handlers.PopulateViews
+	views.OnLayoutReady = views.PopulateViews
 	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
 		log.Panicln(err)
 	}

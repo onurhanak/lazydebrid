@@ -2,6 +2,7 @@ package views
 
 import (
 	"fmt"
+	"lazydebrid/internal/config"
 	"lazydebrid/internal/data"
 	"lazydebrid/internal/logs"
 	"lazydebrid/internal/models"
@@ -9,6 +10,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/atotto/clipboard"
 	"github.com/jroimartin/gocui"
 )
 
@@ -105,4 +107,53 @@ func UpdateDetails(g *gocui.Gui, v *gocui.View) error {
 		return err
 	}
 	return nil
+}
+
+func CopyDownloadLink(g *gocui.Gui, v *gocui.View) error {
+	item, err := GetSelectedItem(v)
+	if err != nil {
+		return err
+	}
+
+	if err := clipboard.WriteAll(item.Download); err != nil {
+		UpdateUILog(g, fmt.Sprintf("Failed to copy download link: %s", err), false, err)
+		return err
+	}
+
+	UpdateUILog(g, fmt.Sprintf("Copied download link for %s", item.Filename), true, nil)
+	return nil
+}
+
+func SearchKeyPress(g *gocui.Gui, v *gocui.View) error {
+	config.SetSearchQuery(v.Buffer())
+
+	if err := utils.RenderList(g); err != nil {
+		return err
+	}
+
+	torrentsView, _ := g.View(ViewTorrents)
+	if err := UpdateDetails(g, torrentsView); err != nil {
+		return err
+	}
+
+	_, err := g.SetCurrentView(ViewTorrents)
+	return err
+}
+
+func DeleteCurrentView(g *gocui.Gui, v *gocui.View) error {
+	currentView := g.CurrentView()
+	if currentView == nil {
+		return nil
+	}
+
+	switch currentView.Name() {
+	case ViewTorrents, ViewDetails, ViewInfo, ViewFooter, ViewActiveTorrents, ViewSearch:
+		return nil
+	default:
+		if err := g.DeleteView(currentView.Name()); err != nil {
+			return err
+		}
+		_, err := g.SetCurrentView(ViewTorrents)
+		return err
+	}
 }
