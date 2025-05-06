@@ -1,5 +1,6 @@
-on download finish we need to update torrentsview
+on download finish we need to update torrentsview (this would update on cyclenextview though)
 add progress for downloads?
 probably need a map for activedownloads not a slice
 handle authentiication errors and such
-handle if dowwnloadpath does not exist
+display filename in active downloads not id
+should probably add caching. (display cache initially, update when we can without blocking ui)
