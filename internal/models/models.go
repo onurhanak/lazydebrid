@@ -41,3 +41,7 @@ type ActiveDownload struct {
 	ID  string `json:"id"`
 	URI string `json:"uri"`
 }
+
+type LineMapping struct {
+	Filename string
+}
