@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"lazydebrid/internal/api"
 	"lazydebrid/internal/config"
 	"lazydebrid/internal/data"
 	"lazydebrid/internal/logs"
@@ -20,128 +21,60 @@ import (
 	"github.com/jroimartin/gocui"
 )
 
-const (
-	baseURL                = "https://api.real-debrid.com/rest/1.0"
-	torrentsEndpointURL    = baseURL + "/torrents"
-	downloadsURL           = baseURL + "/downloads?page=1&limit=4990"
-	torrentsURL            = baseURL + "/torrents/"
-	torrentsAddMagnetURL   = torrentsEndpointURL + "/addMagnet/"
-	torrentsStatusURL      = torrentsEndpointURL + "/info/"
-	torrentsDeleteURL      = torrentsEndpointURL + "/delete/"
-	torrentsSelectFilesURL = torrentsEndpointURL + "/selectFiles/"
-)
-
-func newRequest(method, urlStr string, body io.Reader) (*http.Request, error) {
-	req, err := http.NewRequest(method, urlStr, body)
-	if err != nil {
-		logs.LogEvent(err)
-		return nil, err
-	}
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", config.APIToken()))
-	return req, nil
-}
-
-func readResponse(resp *http.Response) ([]byte, error) {
-	if resp == nil {
-		return nil, fmt.Errorf("response is nil")
-	}
-	defer resp.Body.Close()
-	return io.ReadAll(resp.Body)
-}
-
-func doRequest(req *http.Request) (*http.Response, error) {
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		logs.LogEvent(err)
-		return nil, err
-	}
-	return resp, nil
-}
-
 func DeleteTorrent(g *gocui.Gui, v *gocui.View) error {
-	_, cy := v.Cursor()
-	line, err := v.Line(cy)
-	if err != nil || line == "" {
+	torrentID, err := views.GetSelectedLine(v)
+	if err != nil || strings.TrimSpace(torrentID) == "" {
 		return fmt.Errorf("no torrent selected")
 	}
 
-	req, err := newRequest("DELETE", torrentsDeleteURL+line, nil)
+	req, err := api.NewRequest("DELETE", api.TorrentsDeleteURL+torrentID, nil)
 	if err != nil {
+		return fmt.Errorf("failed to create delete request: %w", err)
+	}
+
+	_, err = api.DoRequest(req)
+	if err != nil {
+		views.UpdateUILog(g, fmt.Sprintf("Failed to delete torrent: %s\nError: %s", torrentID, err), false, nil)
 		return err
 	}
 
-	resp, err := doRequest(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode == http.StatusNoContent {
-		data.ActiveDownloads = RemoveItem(data.ActiveDownloads, line)
-		views.UpdateUILog(g, fmt.Sprintf("Deleted torrent: %s", line), true, nil)
-	} else {
-		msg, _ := io.ReadAll(resp.Body)
-		views.UpdateUILog(g, fmt.Sprintf("Failed to delete torrent: %s\nError: %s", line, msg), false, nil)
-
-	}
+	// if body is empty, it succeeded
+	data.ActiveDownloads = RemoveItem(data.ActiveDownloads, torrentID)
+	views.UpdateUILog(g, fmt.Sprintf("Deleted torrent: %s", torrentID), true, nil)
 
 	return nil
 }
-
 func AddFilesToDebrid(downloadID string) bool {
-	data := url.Values{"files": {"all"}}
-	req, err := newRequest("POST", torrentsSelectFilesURL+downloadID, strings.NewReader(data.Encode()))
+	form := url.Values{"files": {"all"}}
+	_, err := api.PostForm(api.TorrentsSelectFilesURL+downloadID, form)
 	if err != nil {
+		logs.LogEvent(fmt.Errorf("select files API call failed: %w", err))
 		return false
 	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-	resp, err := doRequest(req)
-	if err != nil {
-		return false
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusAccepted {
-		msg, _ := io.ReadAll(resp.Body)
-
-		logs.LogEvent(fmt.Errorf("failed to select files: HTTP %d: %s", resp.StatusCode, msg))
-		return false
-	}
-
 	return true
 }
 
 func SendLinkToAPI(magnetLink string) (string, error) {
-	postData := url.Values{"magnet": {magnetLink}}
-	req, err := newRequest("POST", torrentsAddMagnetURL, strings.NewReader(postData.Encode()))
+	payload := url.Values{"magnet": {magnetLink}}
+
+	body, err := api.PostForm(api.TorrentsAddMagnetURL, payload)
 	if err != nil {
-		return "", err
-	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-	resp, err := doRequest(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusCreated {
-		msg, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("failed to add magnet: HTTP %d: %s", resp.StatusCode, msg)
+		return "", fmt.Errorf("failed to add magnet: %w", err)
 	}
 
-	var result models.ActiveDownload
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return "", fmt.Errorf("error decoding response: %w", err)
+	var download models.ActiveDownload
+	if err := json.Unmarshal(body, &download); err != nil {
+		return "", fmt.Errorf("failed to parse add magnet response: %w", err)
 	}
 
-	data.ActiveDownloads = append(data.ActiveDownloads, result)
+	data.ActiveDownloads = append(data.ActiveDownloads, download)
 	log.Printf("ActiveDownloads now: %d entries", len(data.ActiveDownloads))
-	if !AddFilesToDebrid(result.ID) {
-		return "", fmt.Errorf("magnet added but failed to select files")
+
+	if ok := AddFilesToDebrid(download.ID); !ok {
+		return "", fmt.Errorf("magnet added but file selection failed")
 	}
-	return result.ID, nil
+
+	return download.ID, nil
 }
 
 func GetTorrentStatus(g *gocui.Gui, v *gocui.View) error {
@@ -152,59 +85,50 @@ func GetTorrentStatus(g *gocui.Gui, v *gocui.View) error {
 	}
 	torrentID := strings.TrimSpace(line)
 
-	req, err := newRequest("GET", torrentsStatusURL+torrentID, nil)
+	req, err := api.NewRequest("GET", api.TorrentsStatusURL+torrentID, nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create status request: %w", err)
 	}
 
-	resp, err := doRequest(req)
+	body, err := api.DoRequest(req)
 	if err != nil {
+		views.UpdateUILog(g, fmt.Sprintf("Failed to get torrent status: %v", err), false, nil)
 		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		views.UpdateUILog(
-			g,
-			fmt.Sprintf("Failed to get torrent status: HTTP %d\n%s", resp.StatusCode, string(body)), false, nil)
-		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
 	var status models.Torrent
-	if err := json.NewDecoder(resp.Body).Decode(&status); err != nil {
+	if err := json.Unmarshal(body, &status); err != nil {
 		logs.LogEvent(err)
 		views.UpdateUILog(g, "Failed to decode torrent status", false, err)
-		return err
+		return fmt.Errorf("error decoding status: %w", err)
 	}
 
-	infoView := views.GetView(g, views.ViewInfo)
-	now := logs.GetNow()
-	_, err = fmt.Fprintf(infoView,
-		"[%s]\nStatus for %s:\n  Status: %s\n  Progress: %d%%\n  Added: %s\n  Files: %d\n\n",
-		now, status.Filename, status.Status, status.Progress, status.Added, len(status.Files),
-	)
-	return err
+	views.UpdateUILog(g, fmt.Sprintf(
+		"\nStatus for %s:\n  Status: %s\n  Progress: %d%%\n  Added: %s\n  Files: %d\n\n",
+		status.Filename, status.Status, status.Progress, status.Added, len(status.Files)), true, nil)
+
+	return nil
 }
+
 func DownloadFile(torrent models.Download) bool {
 	path := filepath.Join(config.DownloadPath(), torrent.Filename)
+
+	resp, err := http.Get(torrent.Download)
+	if err != nil {
+		logs.LogEvent(fmt.Errorf("failed to GET %s: %w", torrent.Download, err))
+		return false
+	}
+	defer resp.Body.Close()
+
 	out, err := os.Create(path)
 	if err != nil {
-		logs.LogEvent(err)
+		logs.LogEvent(fmt.Errorf("failed to create file %s: %w", path, err))
 		return false
 	}
 	defer out.Close()
 
-	resp, err := http.Get(torrent.Download)
-	if err != nil {
-		logs.LogEvent(err)
-		return false
-	}
-	defer resp.Body.Close()
-
-	_, err = io.Copy(out, resp.Body)
-	if err != nil {
-		logs.LogEvent(err)
+	if _, err := io.Copy(out, resp.Body); err != nil {
+		logs.LogEvent(fmt.Errorf("failed to write to file %s: %w", path, err))
 		return false
 	}
 
@@ -212,115 +136,73 @@ func DownloadFile(torrent models.Download) bool {
 	return true
 }
 
-func GetSelectedTorrentID(v *gocui.View) (string, error) {
-	_, cy := v.Cursor()
-	if cy < 0 || cy >= len(data.TorrentLineIndex) {
-		return "", fmt.Errorf("invalid cursor line index: %d", cy)
-	}
-	return data.TorrentLineIndex[cy], nil
-}
-
 func GetTorrentContents(g *gocui.Gui, v *gocui.View) map[string]models.Download {
-	id, err := GetSelectedTorrentID(v)
+	id, err := views.GetSelectedTorrentID(v)
 	if err != nil {
-		logs.LogEvent(fmt.Errorf("Selection error: %s", err))
+		logs.LogEvent(fmt.Errorf("selection error: %w", err))
+		views.UpdateUILog(g, "No torrent selected", false, nil)
 		return nil
 	}
 
 	torrent, ok := data.DownloadMap[id]
 	if !ok {
-		log.Printf("No torrent found for ID: %s", id)
+		msg := fmt.Sprintf("No torrent found for ID: %s", id)
+		logs.LogEvent(fmt.Errorf(msg))
+		views.UpdateUILog(g, msg, false, nil)
 		return nil
 	}
 
-	var torrentFile models.Download
-	var errorMessage struct {
-		Error     string `json:"error"`
-		ErrorCode int    `json:"error_code"`
-	}
-
-	var errorLog []string
-	data.FilesMap = make(map[string]models.Download)
+	files := make(map[string]models.Download)
+	var errors []string
 
 	for _, link := range torrent.Links {
-		postData := url.Values{"link": {link}}
-		req, _ := newRequest("POST", baseURL+"/unrestrict/link/", strings.NewReader(postData.Encode()))
-		resp, _ := doRequest(req)
-		response, _ := readResponse(resp)
-
-		// does not work
-		if err := json.Unmarshal(response, &torrentFile); err != nil {
+		file, err := api.UnrestrictLink(link)
+		if err != nil {
 			logs.LogEvent(err)
-			if err = json.Unmarshal(response, &errorMessage); err == nil {
-				logs.LogEvent(fmt.Errorf("API error: %s (code %d)", errorMessage.Error, errorMessage.ErrorCode))
-				errorLog = append(errorLog, errorMessage.Error)
-			} else {
-				errorLog = append(errorLog, "Unmarshal failed and no API error given")
-			}
-			log.Println(errorLog)
+			errors = append(errors, err.Error())
 			continue
 		}
-
-		if torrentFile.Filename != "" {
-			data.FilesMap[torrentFile.Filename] = torrentFile
-		}
+		files[file.Filename] = file
 	}
 
-	if len(errorLog) > 0 {
-		msg := strings.Join(errorLog, "; ")
-		log.Println(msg)
-		g.Update(func(g *gocui.Gui) error {
-			views.UpdateUILog(g, msg, false, nil)
-			return nil
-		})
+	data.FilesMap = files
+
+	if len(errors) > 0 {
+		views.UpdateUILog(g, strings.Join(errors, "; "), false, nil)
 	}
 
-	return data.FilesMap
+	return files
 }
 
 func GetUserTorrents() map[string]models.Torrent {
 	result := make(map[string]models.Torrent)
 
-	req, err := newRequest("GET", torrentsURL, nil)
+	req, err := api.NewRequest("GET", api.TorrentsURL, nil)
 	if err != nil {
-		logs.LogEvent(err)
+		logs.LogEvent(fmt.Errorf("failed to create request for user torrents: %w", err))
 		return result
 	}
 
-	resp, err := doRequest(req)
+	body, err := api.DoRequest(req)
 	if err != nil {
-		logs.LogEvent(err)
-		return result
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		logs.LogEvent(err)
+		logs.LogEvent(fmt.Errorf("failed to fetch user torrents: %w", err))
 		return result
 	}
 
 	var list []models.Torrent
 	if err := json.Unmarshal(body, &list); err != nil {
-		logs.LogEvent(err)
+		logs.LogEvent(fmt.Errorf("failed to parse torrent list: %w", err))
 		return result
 	}
 
+	data.TorrentLineIndex = data.TorrentLineIndex[:0] // clear before repopulating
 	for _, item := range list {
 		data.TorrentLineIndex = append(data.TorrentLineIndex, item.Filename)
 		result[item.Filename] = item
 	}
+
 	data.DownloadMap = result
 	data.UserDownloads = list
 
 	return result
-}
-
-func DumpTorrentsToJSON(torrents map[string]models.Torrent, filename string) error {
-	data, err := json.MarshalIndent(torrents, "", "  ")
-	if err != nil {
-		return fmt.Errorf("failed to marshal torrents: %w", err)
-	}
-
-	return os.WriteFile(filename, data, 0644)
 }

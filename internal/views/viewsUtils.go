@@ -40,9 +40,28 @@ func CloseView(g *gocui.Gui, name string) error {
 	return err
 }
 
-func GetSelectedItem(v *gocui.View) (models.Download, error) {
+func GetSelectedTorrentID(v *gocui.View) (string, error) {
+	_, cy := v.Cursor()
+	if cy < 0 {
+		return "", fmt.Errorf("cursor is off-screen or uninitialized")
+	}
+	if cy >= len(data.TorrentLineIndex) {
+		return "", fmt.Errorf("cursor index %d out of bounds (max %d)", cy, len(data.TorrentLineIndex)-1)
+	}
+	return data.TorrentLineIndex[cy], nil
+}
+
+func GetSelectedLine(v *gocui.View) (string, error) {
 	_, cy := v.Cursor()
 	line, err := v.Line(cy)
+	if err != nil {
+		return "", fmt.Errorf("unable to get selected line: %w", err)
+	}
+	return line, nil
+}
+
+func GetSelectedItem(v *gocui.View) (models.Download, error) {
+	line, err := GetSelectedLine(v)
 	if err != nil {
 		return models.Download{}, fmt.Errorf("unable to get selected line: %w", err)
 	}
