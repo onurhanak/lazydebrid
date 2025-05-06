@@ -99,15 +99,16 @@ func CloseView(g *gocui.Gui, name string) error {
 	return err
 }
 
-func GetSelectedTorrentID(v *gocui.View) (string, error) {
+func GetSelectedTorrent(v *gocui.View) (models.Torrent, error) {
 	_, cy := v.Cursor()
+	var emptyTorrent models.Torrent
 	if cy < 0 {
-		return "", fmt.Errorf("cursor is off-screen or uninitialized")
+		return emptyTorrent, fmt.Errorf("cursor is off-screen or uninitialized")
 	}
-	if cy >= len(data.TorrentLineIndex) {
-		return "", fmt.Errorf("cursor index %d out of bounds (max %d)", cy, len(data.TorrentLineIndex)-1)
+	if cy >= len(data.UserDownloads) {
+		return emptyTorrent, fmt.Errorf("cursor index %d out of bounds (max %d)", cy, len(data.TorrentLineIndex)-1)
 	}
-	return data.TorrentLineIndex[cy], nil
+	return data.UserDownloads[cy], nil
 }
 
 func GetSelectedLine(v *gocui.View) (string, error) {
@@ -140,20 +141,20 @@ func PopulateViews(g *gocui.Gui) {
 		UpdateUILog(g, "API returned no torrents, is your API token correct?", true, nil)
 	}
 
-	for _, item := range data.UserDownloads {
-		if item.Status == "downloaded" {
-			fmt.Fprintln(torrentsView, strings.TrimSpace(item.Filename))
-		}
-	}
-
 	activeView := GetView(g, ViewActiveTorrents)
 	activeView.Clear()
 
 	// Add active downloads from the API
-	for _, item := range data.UserDownloads {
+	for index := range len(data.UserDownloads) {
+		item := data.UserDownloads[index]
+
 		if item.Status == "queued" || item.Status == "downloading" {
 			fmt.Fprintln(activeView, item.ID)
+		} else if item.Status == "downloaded" {
+			fmt.Fprintln(torrentsView, strings.TrimSpace(item.Filename))
+
 		}
+
 	}
 	// Add active downloads from the present session
 	for _, item := range data.ActiveDownloads {
@@ -164,7 +165,7 @@ func PopulateViews(g *gocui.Gui) {
 }
 
 func UpdateDetails(g *gocui.Gui, v *gocui.View) error {
-	_, cy := v.Cursor()
+	x, cy := v.Cursor()
 	line, err := v.Line(cy)
 	if err != nil || strings.TrimSpace(line) == "" {
 		return nil
@@ -177,7 +178,7 @@ func UpdateDetails(g *gocui.Gui, v *gocui.View) error {
 	mainView.Clear()
 	mainView.Highlight = false
 
-	torrentItem, ok := data.DownloadMap[strings.TrimSpace(line)]
+	torrentItem, ok := data.UserDownloads[x]
 	if !ok {
 		_, err = fmt.Fprint(mainView, "No details found.")
 		if err != nil {

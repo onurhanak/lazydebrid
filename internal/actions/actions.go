@@ -22,7 +22,8 @@ import (
 )
 
 func DeleteTorrent(g *gocui.Gui, v *gocui.View) error {
-	torrentID, err := views.GetSelectedLine(v)
+	torrent, err := views.GetSelectedTorrent(v)
+	torrentID := torrent.ID
 	if err != nil || strings.TrimSpace(torrentID) == "" {
 		return fmt.Errorf("no torrent selected")
 	}
@@ -137,19 +138,19 @@ func DownloadFile(torrent models.Download) bool {
 }
 
 func GetTorrentContents(g *gocui.Gui, v *gocui.View) map[string]models.Download {
-	id, err := views.GetSelectedTorrentID(v)
+	torrent, err := views.GetSelectedTorrent(v)
 	if err != nil {
 		logs.LogEvent(fmt.Errorf("selection error: %w", err))
 		views.UpdateUILog(g, "No torrent selected", false, nil)
 		return nil
 	}
 
-	torrent, ok := data.DownloadMap[id]
-	if !ok {
-		logs.LogEvent(fmt.Errorf("No torrent found for ID: %s", id))
-		views.UpdateUILog(g, fmt.Sprintf("No torrent found for ID: %s", id), false, nil)
-		return nil
-	}
+	//torrent, ok := data.UserDownloads[id]
+	// if !ok {
+	// 	logs.LogEvent(fmt.Errorf("No torrent found for ID: %s", id))
+	// 	views.UpdateUILog(g, fmt.Sprintf("No torrent found for ID: %s", id), false, nil)
+	// 	return nil
+	// }
 
 	files := make(map[string]models.Download)
 	var errors []string
@@ -173,35 +174,36 @@ func GetTorrentContents(g *gocui.Gui, v *gocui.View) map[string]models.Download 
 	return files
 }
 
-func GetUserTorrents() map[string]models.Torrent {
-	result := make(map[string]models.Torrent)
+func GetUserTorrents() map[int]models.Torrent {
 
 	req, err := api.NewRequest("GET", api.TorrentsURL, nil)
 	if err != nil {
 		logs.LogEvent(fmt.Errorf("failed to create request for user torrents: %w", err))
-		return result
+		return nil
 	}
 
 	body, err := api.DoRequest(req)
 	if err != nil {
 		logs.LogEvent(fmt.Errorf("failed to fetch user torrents: %w", err))
-		return result
+		return nil
 	}
 
-	var list []models.Torrent
-	if err := json.Unmarshal(body, &list); err != nil {
+	var torrentList []models.Torrent
+	if err := json.Unmarshal(body, &torrentList); err != nil {
 		logs.LogEvent(fmt.Errorf("failed to parse torrent list: %w", err))
-		return result
+		return nil
 	}
 
-	data.TorrentLineIndex = data.TorrentLineIndex[:0] // clear before repopulating
-	for _, item := range list {
-		data.TorrentLineIndex = append(data.TorrentLineIndex, item.Filename)
-		result[item.Filename] = item
+	// essentially a map of which line number refers to which torrent
+	// this is necessary because gocui results in changed filenames
+	// depending on the width of the viewport
+	// data.TorrentLineIndex = data.TorrentLineIndex[:0] // clear before repopulating
+	for index, item := range torrentList {
+		data.UserDownloads[index] = item
 	}
 
-	data.DownloadMap = result
-	data.UserDownloads = list
+	// data.DownloadMap = result
+	// data.UserDownloads = list
 
-	return result
+	return data.UserDownloads
 }
