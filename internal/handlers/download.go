@@ -26,7 +26,7 @@ func handleStartDownload(g *gocui.Gui, item models.Download) {
 	}
 }
 
-func DownloadAll(g *gocui.Gui, _ *gocui.View) error {
+func HandleDownloadAll(g *gocui.Gui, _ *gocui.View) error {
 
 	for _, item := range data.FilesMap {
 		go func(dlItem models.Download) {
@@ -37,7 +37,7 @@ func DownloadAll(g *gocui.Gui, _ *gocui.View) error {
 	return nil
 }
 
-func DownloadSelectedFile(g *gocui.Gui, v *gocui.View) error {
+func HandleDownloadSelectedFile(g *gocui.Gui, v *gocui.View) error {
 	item, err := views.GetSelectedItem(v)
 	if err != nil {
 		return err
