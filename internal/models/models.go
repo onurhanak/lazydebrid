@@ -45,3 +45,8 @@ type ActiveDownload struct {
 type LineMapping struct {
 	Filename string
 }
+
+type ErrResp struct {
+	Error     string `json:"error"`
+	ErrorCode int    `json:"error_code"`
+}

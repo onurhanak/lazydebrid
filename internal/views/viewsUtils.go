@@ -75,6 +75,11 @@ func GetSelectedItem(v *gocui.View) (models.Download, error) {
 func PopulateViews(g *gocui.Gui) {
 	torrentsView := GetView(g, ViewTorrents)
 	torrentsView.Clear()
+
+	if len(data.UserDownloads) == 0 {
+		UpdateUILog(g, "API returned no torrents, is your API token correct?", true, nil)
+	}
+
 	for _, item := range data.UserDownloads {
 		if item.Status == "downloaded" {
 			fmt.Fprintln(torrentsView, strings.TrimSpace(item.Filename))
