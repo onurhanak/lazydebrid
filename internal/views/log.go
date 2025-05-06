@@ -1,9 +1,8 @@
-package logui
+package views
 
 import (
 	"fmt"
 	"lazydebrid/internal/logs"
-	"lazydebrid/internal/views"
 
 	"github.com/jroimartin/gocui"
 )
@@ -19,7 +18,7 @@ func LogError(v *gocui.View, errorString string, err error) {
 }
 
 func UpdateUILog(g *gocui.Gui, message string, isInfo bool, err error) {
-	infoView := views.GetView(g, views.ViewInfo)
+	infoView := GetView(g, ViewInfo)
 	g.Update(func(g *gocui.Gui) error {
 		if isInfo {
 			LogInfo(infoView, message)

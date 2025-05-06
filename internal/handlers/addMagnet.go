@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"lazydebrid/internal/actions"
-	"lazydebrid/internal/logui"
+	"lazydebrid/internal/views"
 
 	"github.com/jroimartin/gocui"
 )
@@ -13,19 +13,19 @@ import (
 func HandleAddMagnetLink(g *gocui.Gui, input string) error {
 	input = strings.TrimSpace(input)
 	if input == "" {
-		logui.UpdateUILog(g, "Error: Empty magnet link", true, nil)
+		views.UpdateUILog(g, "Error: Empty magnet link", true, nil)
 		return nil
 	}
 
 	id, err := actions.SendLinkToAPI(input)
 	if err != nil {
-		logui.UpdateUILog(g, "", false, err)
+		views.UpdateUILog(g, "", false, err)
 		return err
 	}
-	logui.UpdateUILog(g, fmt.Sprintf("Magnet added: %s", id), true, nil)
+	views.UpdateUILog(g, fmt.Sprintf("Magnet added: %s", id), true, nil)
 
 	if actions.AddFilesToDebrid(id) {
-		logui.UpdateUILog(g,
+		views.UpdateUILog(g,
 			fmt.Sprintf("All files selected for download: %s", id),
 			true,
 			nil)
@@ -34,7 +34,7 @@ func HandleAddMagnetLink(g *gocui.Gui, input string) error {
 
 	} else {
 
-		logui.UpdateUILog(g,
+		views.UpdateUILog(g,
 			fmt.Sprintf("Failed to select files for %s", id),
 			false,
 			nil)

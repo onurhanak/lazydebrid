@@ -8,13 +8,13 @@ import (
 
 	"lazydebrid/internal/actions"
 	"lazydebrid/internal/config"
-	"lazydebrid/internal/logui"
 	"lazydebrid/internal/models"
+	"lazydebrid/internal/views"
 )
 
 func startDownload(g *gocui.Gui, item models.Download) {
 	log := func(msg string, success bool, err error) {
-		logui.UpdateUILog(g, msg, success, err)
+		views.UpdateUILog(g, msg, success, err)
 	}
 
 	log(fmt.Sprintf("Downloading %s to %s", item.Filename, config.DownloadPath()), true, nil)
@@ -53,10 +53,10 @@ func CopyDownloadLink(g *gocui.Gui, v *gocui.View) error {
 	}
 
 	if err := clipboard.WriteAll(item.Download); err != nil {
-		logui.UpdateUILog(g, fmt.Sprintf("Failed to copy download link: %s", err), false, err)
+		views.UpdateUILog(g, fmt.Sprintf("Failed to copy download link: %s", err), false, err)
 		return err
 	}
 
-	logui.UpdateUILog(g, fmt.Sprintf("Copied download link for %s", item.Filename), true, nil)
+	views.UpdateUILog(g, fmt.Sprintf("Copied download link for %s", item.Filename), true, nil)
 	return nil
 }

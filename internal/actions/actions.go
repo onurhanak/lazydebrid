@@ -13,7 +13,6 @@ import (
 
 	"lazydebrid/internal/config"
 	"lazydebrid/internal/logs"
-	"lazydebrid/internal/logui"
 	"lazydebrid/internal/models"
 	"lazydebrid/internal/views"
 
@@ -91,10 +90,10 @@ func DeleteTorrent(g *gocui.Gui, v *gocui.View) error {
 
 	if resp.StatusCode == http.StatusNoContent {
 		ActiveDownloads = RemoveItem(ActiveDownloads, line)
-		logui.UpdateUILog(g, fmt.Sprintf("Deleted torrent: %s", line), true, nil)
+		views.UpdateUILog(g, fmt.Sprintf("Deleted torrent: %s", line), true, nil)
 	} else {
 		msg, _ := io.ReadAll(resp.Body)
-		logui.UpdateUILog(g, fmt.Sprintf("Failed to delete torrent: %s\nError: %s", line, msg), false, nil)
+		views.UpdateUILog(g, fmt.Sprintf("Failed to delete torrent: %s\nError: %s", line, msg), false, nil)
 
 	}
 
@@ -178,7 +177,7 @@ func GetTorrentStatus(g *gocui.Gui, v *gocui.View) error {
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		logui.UpdateUILog(
+		views.UpdateUILog(
 			g,
 			fmt.Sprintf("Failed to get torrent status: HTTP %d\n%s", resp.StatusCode, string(body)), false, nil)
 		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
@@ -187,7 +186,7 @@ func GetTorrentStatus(g *gocui.Gui, v *gocui.View) error {
 	var status models.Torrent
 	if err := json.NewDecoder(resp.Body).Decode(&status); err != nil {
 		logs.LogEvent(err)
-		logui.UpdateUILog(g, "Failed to decode torrent status", false, err)
+		views.UpdateUILog(g, "Failed to decode torrent status", false, err)
 		return err
 	}
 
@@ -283,7 +282,7 @@ func GetTorrentContents(g *gocui.Gui, v *gocui.View) map[string]models.Download 
 		msg := strings.Join(errorLog, "; ")
 		log.Println(msg)
 		g.Update(func(g *gocui.Gui) error {
-			logui.UpdateUILog(g, msg, false, nil)
+			views.UpdateUILog(g, msg, false, nil)
 			return nil
 		})
 	}

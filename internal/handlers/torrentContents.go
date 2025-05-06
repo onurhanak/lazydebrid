@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"lazydebrid/internal/actions"
 	"lazydebrid/internal/logs"
-	"lazydebrid/internal/logui"
 	"lazydebrid/internal/models"
 	"lazydebrid/internal/views"
 	"strings"
@@ -33,7 +32,7 @@ func showTorrentFiles(g *gocui.Gui, v *gocui.View, fileMap map[string]models.Dow
 	})
 }
 func FileContentsHandler(g *gocui.Gui, v *gocui.View) error {
-	logui.UpdateUILog(g, "Getting file contents...", true, nil)
+	views.UpdateUILog(g, "Getting file contents...", true, nil)
 
 	go func() {
 		torrentFiles := actions.GetTorrentContents(g, v)
