@@ -14,6 +14,46 @@ import (
 	"github.com/jroimartin/gocui"
 )
 
+func GenerateDetailsString(torrentItem models.Torrent) string {
+	detailsString := fmt.Sprintf(
+		"ID: %s\nFilename: %s\nFilesize: %d bytes\nLink: %s\nDownload: %s\nStreamable: %d",
+		torrentItem.ID,
+		torrentItem.Filename,
+		torrentItem.Bytes,
+		torrentItem.Hash,
+		torrentItem.Hash,
+		torrentItem.Bytes,
+	)
+	return detailsString
+}
+func RenderList(g *gocui.Gui) error {
+	v, err := g.View("torrents")
+	if err != nil {
+		return err
+	}
+	v.Clear()
+	err = v.SetCursor(0, 0)
+	if err != nil {
+		return err
+	}
+
+	for _, torrentItem := range data.UserDownloads {
+		if config.SearchQuery() == "" || utils.Match(torrentItem.Filename, config.SearchQuery()) {
+			_, err := fmt.Fprintln(v, torrentItem.Filename)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func GetCurrentLine(v *gocui.View) (string, error) {
+	_, cy := v.Cursor()
+	line, err := v.Line(cy)
+	return line, err
+}
 func GetView(g *gocui.Gui, name string) *gocui.View {
 	v, _ := g.View(name)
 	return v
@@ -127,7 +167,7 @@ func UpdateDetails(g *gocui.Gui, v *gocui.View) error {
 		return nil
 	}
 
-	_, err = fmt.Fprint(mainView, utils.GenerateDetailsString(torrentItem))
+	_, err = fmt.Fprint(mainView, GenerateDetailsString(torrentItem))
 	if err != nil {
 		return err
 	}
@@ -152,7 +192,7 @@ func CopyDownloadLink(g *gocui.Gui, v *gocui.View) error {
 func SearchKeyPress(g *gocui.Gui, v *gocui.View) error {
 	config.SetSearchQuery(v.Buffer())
 
-	if err := utils.RenderList(g); err != nil {
+	if err := RenderList(g); err != nil {
 		return err
 	}
 
@@ -185,6 +225,7 @@ func ShowTorrentFiles(g *gocui.Gui, v *gocui.View, fileMap map[string]models.Dow
 		return nil
 	})
 }
+
 func DeleteCurrentView(g *gocui.Gui, v *gocui.View) error {
 	currentView := g.CurrentView()
 	if currentView == nil {
