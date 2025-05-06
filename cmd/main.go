@@ -27,8 +27,9 @@ func main() {
 
 	err := config.LoadUserSettings()
 	if err != nil {
-		fmt.Println(err)
-		log.Fatalln("Could not not load user settings, bailing.")
+		_, lazyDebridFolderPath, _ := config.ConfigPath()
+		fmt.Printf("User config is corrupted.\nYou may need to delete %s folder manually.\n", lazyDebridFolderPath)
+		log.Fatalf("Could not not load user settings, bailing. Error: %s", err)
 	}
 	actions.GetUserTorrents()
 	g, err := gocui.NewGui(gocui.OutputNormal)

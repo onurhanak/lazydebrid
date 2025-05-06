@@ -47,7 +47,6 @@ func Layout(g *gocui.Gui) error {
 		v.Title = "Search"
 		v.Editable = true
 
-		_, err = g.SetCurrentView(ViewSearch)
 	}
 
 	if torrentsView, err := g.SetView(ViewTorrents, 0, 3, splitX, maxY-4); err != nil {
@@ -72,6 +71,7 @@ func Layout(g *gocui.Gui) error {
 			return err
 		}
 
+		_, err = g.SetCurrentView(ViewTorrents)
 	}
 
 	if mainView, err := g.SetView(ViewDetails, splitX+1, detailsTop, maxX-1, detailsBottom); err != nil && err != gocui.ErrUnknownView {

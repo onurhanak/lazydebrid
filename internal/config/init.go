@@ -62,6 +62,27 @@ func SetupConfigFromUserInput() error {
 	if downloadPath == "" {
 		usr, _ := user.Current()
 		downloadPath = filepath.Join(usr.HomeDir, "Downloads/")
+	} else {
+		if _, err := os.Stat(downloadPath); os.IsNotExist(err) {
+			fmt.Printf("Download path '%s' does not exist. Create it? (y/n): ", downloadPath)
+			var response string
+			fmt.Scanln(&response)
+			if response == "y" || response == "Y" {
+				err := os.MkdirAll(downloadPath, 0755)
+				if err != nil {
+					fmt.Println("Failed to create directory:", err)
+					os.Exit(1)
+				}
+			} else {
+				// delete config folder so it triggers first run next time
+				_, lazyDebridFolderPath, err := ConfigPath()
+				if err == nil {
+					_ = os.RemoveAll(lazyDebridFolderPath)
+				}
+				fmt.Println("Downloads folder must exist. Exiting.")
+				os.Exit(1)
+			}
+		}
 	}
 
 	if err := SaveSetting("apiToken", apiToken); err != nil {

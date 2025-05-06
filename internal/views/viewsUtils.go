@@ -14,18 +14,37 @@ import (
 	"github.com/jroimartin/gocui"
 )
 
+const (
+	ColorReset  = "\033[0m"
+	ColorCyan   = "\033[36m"
+	ColorYellow = "\033[33m"
+	ColorGreen  = "\033[32m"
+	ColorBlue   = "\033[34m"
+)
+
 func GenerateDetailsString(torrentItem models.Torrent) string {
-	detailsString := fmt.Sprintf(
-		"ID: %s\nFilename: %s\nFilesize: %d bytes\nLink: %s\nDownload: %s\nStreamable: %d",
-		torrentItem.ID,
-		torrentItem.Filename,
-		torrentItem.Bytes,
-		torrentItem.Hash,
-		torrentItem.Hash,
-		torrentItem.Bytes,
-	)
-	return detailsString
+	var sb strings.Builder
+
+	sb.WriteString(fmt.Sprintf("%sID        :%s %s\n", ColorYellow, ColorReset, torrentItem.ID))
+	sb.WriteString(fmt.Sprintf("%sFilename  :%s %s\n", ColorYellow, ColorReset, torrentItem.Filename))
+	sb.WriteString(fmt.Sprintf("%sFilesize  :%s %s\n", ColorYellow, ColorReset, humanReadableBytes(torrentItem.Bytes)))
+
+	return sb.String()
 }
+
+func humanReadableBytes(bytes int64) string {
+	const unit = 1024
+	if bytes < unit {
+		return fmt.Sprintf("%d B", bytes)
+	}
+	div, exp := int64(unit), 0
+	for n := bytes / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
+}
+
 func RenderList(g *gocui.Gui) error {
 	v, err := g.View("torrents")
 	if err != nil {
