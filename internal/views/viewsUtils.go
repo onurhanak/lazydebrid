@@ -99,6 +99,7 @@ func CloseView(g *gocui.Gui, name string) error {
 	return err
 }
 
+// the next 3 functions seem redundant
 func GetSelectedTorrent(v *gocui.View) (models.Torrent, error) {
 	_, cy := v.Cursor()
 	var emptyTorrent models.Torrent
@@ -106,7 +107,7 @@ func GetSelectedTorrent(v *gocui.View) (models.Torrent, error) {
 		return emptyTorrent, fmt.Errorf("cursor is off-screen or uninitialized")
 	}
 	if cy >= len(data.UserDownloads) {
-		return emptyTorrent, fmt.Errorf("cursor index %d out of bounds (max %d)", cy, len(data.TorrentLineIndex)-1)
+		return emptyTorrent, fmt.Errorf("cursor index %d out of bounds (max %d)", cy, len(data.UserDownloads)-1)
 	}
 	return data.UserDownloads[cy], nil
 }
@@ -120,14 +121,14 @@ func GetSelectedLine(v *gocui.View) (string, error) {
 	return line, nil
 }
 
-func GetSelectedItem(v *gocui.View) (models.Download, error) {
+func GetSelectedTorrentFile(v *gocui.View) (models.TorrentFileDetailed, error) {
 	line, err := GetSelectedLine(v)
 	if err != nil {
-		return models.Download{}, fmt.Errorf("unable to get selected line: %w", err)
+		return models.TorrentFileDetailed{}, fmt.Errorf("unable to get selected line: %w", err)
 	}
 	item, ok := data.FilesMap[line]
 	if !ok {
-		return models.Download{}, fmt.Errorf("no download item found for selected line")
+		return models.TorrentFileDetailed{}, fmt.Errorf("no download item found for selected line")
 	}
 	return item, nil
 }
@@ -195,7 +196,7 @@ func UpdateDetails(g *gocui.Gui, v *gocui.View) error {
 }
 
 func CopyDownloadLink(g *gocui.Gui, v *gocui.View) error {
-	item, err := GetSelectedItem(v)
+	item, err := GetSelectedTorrentFile(v)
 	if err != nil {
 		return err
 	}
@@ -225,7 +226,7 @@ func SearchKeyPress(g *gocui.Gui, v *gocui.View) error {
 	return err
 }
 
-func ShowTorrentFiles(g *gocui.Gui, v *gocui.View, fileMap map[string]models.Download) {
+func ShowTorrentFiles(g *gocui.Gui, v *gocui.View, fileMap map[string]models.TorrentFileDetailed) {
 
 	g.Update(func(g *gocui.Gui) error {
 		detailsView := GetView(g, ViewDetails)

@@ -1,6 +1,6 @@
 package models
 
-type Download struct {
+type TorrentFileDetailed struct {
 	Id         string `json:"id"`
 	Filename   string `json:"filename"`
 	MimeType   string `json:"mimeType"`

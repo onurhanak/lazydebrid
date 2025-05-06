@@ -111,7 +111,7 @@ func GetTorrentStatus(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
 
-func DownloadFile(torrent models.Download) bool {
+func DownloadFile(torrent models.TorrentFileDetailed) bool {
 	path := filepath.Join(config.DownloadPath(), torrent.Filename)
 
 	resp, err := http.Get(torrent.Download)
@@ -137,7 +137,7 @@ func DownloadFile(torrent models.Download) bool {
 	return true
 }
 
-func GetTorrentContents(g *gocui.Gui, v *gocui.View) map[string]models.Download {
+func GetTorrentContents(g *gocui.Gui, v *gocui.View) map[string]models.TorrentFileDetailed {
 	torrent, err := views.GetSelectedTorrent(v)
 	if err != nil {
 		logs.LogEvent(fmt.Errorf("selection error: %w", err))
@@ -152,7 +152,7 @@ func GetTorrentContents(g *gocui.Gui, v *gocui.View) map[string]models.Download 
 	// 	return nil
 	// }
 
-	files := make(map[string]models.Download)
+	files := make(map[string]models.TorrentFileDetailed)
 	var errors []string
 
 	for _, link := range torrent.Links {

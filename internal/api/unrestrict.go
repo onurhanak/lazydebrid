@@ -19,8 +19,8 @@ const (
 	TorrentsSelectFilesURL = TorrentsEndpointURL + "/selectFiles/"
 )
 
-func UnrestrictLink(link string) (models.Download, error) {
-	var file models.Download
+func UnrestrictLink(link string) (models.TorrentFileDetailed, error) {
+	var file models.TorrentFileDetailed
 	var apiErr struct {
 		Error     string `json:"error"`
 		ErrorCode int    `json:"error_code"`
