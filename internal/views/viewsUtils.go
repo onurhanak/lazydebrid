@@ -158,7 +158,7 @@ func PopulateViews(g *gocui.Gui) {
 }
 
 func UpdateDetails(g *gocui.Gui, v *gocui.View) error {
-	x, cy := v.Cursor()
+	_, cy := v.Cursor()
 	line, err := v.Line(cy)
 	if err != nil || strings.TrimSpace(line) == "" {
 		return nil
@@ -171,7 +171,7 @@ func UpdateDetails(g *gocui.Gui, v *gocui.View) error {
 	mainView.Clear()
 	mainView.Highlight = false
 
-	torrentItem, ok := data.UserDownloads[x]
+	torrentItem, ok := data.UserDownloads[cy]
 	if !ok {
 		_, err = fmt.Fprint(mainView, "No details found.")
 		if err != nil {
