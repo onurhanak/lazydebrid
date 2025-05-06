@@ -140,6 +140,26 @@ func SearchKeyPress(g *gocui.Gui, v *gocui.View) error {
 	return err
 }
 
+func ShowTorrentFiles(g *gocui.Gui, v *gocui.View, fileMap map[string]models.Download) {
+
+	g.Update(func(g *gocui.Gui) error {
+		detailsView := GetView(g, ViewDetails)
+		if detailsView == nil {
+			err := fmt.Errorf("torrentsView is nil")
+			logs.LogEvent(err)
+			return err
+		}
+
+		detailsView.Clear()
+		detailsView.Highlight = true
+		for key := range fileMap {
+			fmt.Fprintln(detailsView, strings.TrimSpace(key))
+		}
+
+		_, _ = g.SetCurrentView(ViewDetails)
+		return nil
+	})
+}
 func DeleteCurrentView(g *gocui.Gui, v *gocui.View) error {
 	currentView := g.CurrentView()
 	if currentView == nil {
