@@ -112,25 +112,17 @@ func GetSelectedTorrent(v *gocui.View) (models.Torrent, error) {
 	return data.UserDownloads[cy], nil
 }
 
-func GetSelectedLine(v *gocui.View) (string, error) {
+func GetSelectedTorrentFile(v *gocui.View) (models.TorrentFileDetailed, error) {
 	_, cy := v.Cursor()
 	line, err := v.Line(cy)
 	if err != nil {
-		return "", fmt.Errorf("unable to get selected line: %w", err)
-	}
-	return line, nil
-}
-
-func GetSelectedTorrentFile(v *gocui.View) (models.TorrentFileDetailed, error) {
-	line, err := GetSelectedLine(v)
-	if err != nil {
 		return models.TorrentFileDetailed{}, fmt.Errorf("unable to get selected line: %w", err)
 	}
-	item, ok := data.FilesMap[line]
+	torrentFile, ok := data.FilesMap[line]
 	if !ok {
 		return models.TorrentFileDetailed{}, fmt.Errorf("no download item found for selected line")
 	}
-	return item, nil
+	return torrentFile, nil
 }
 
 func PopulateViews(g *gocui.Gui) {
