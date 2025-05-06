@@ -21,6 +21,7 @@ import (
 	"github.com/jroimartin/gocui"
 )
 
+// not sure if this will work
 func DeleteTorrent(g *gocui.Gui, v *gocui.View) error {
 	torrent, err := views.GetSelectedTorrent(v)
 	torrentID := torrent.ID
@@ -45,6 +46,7 @@ func DeleteTorrent(g *gocui.Gui, v *gocui.View) error {
 
 	return nil
 }
+
 func AddFilesToDebrid(downloadID string) bool {
 	form := url.Values{"files": {"all"}}
 	_, err := api.PostForm(api.TorrentsSelectFilesURL+downloadID, form)
@@ -197,7 +199,8 @@ func GetUserTorrents() map[int]models.Torrent {
 	// essentially a map of which line number refers to which torrent
 	// this is necessary because gocui results in changed filenames
 	// depending on the width of the viewport
-	// data.TorrentLineIndex = data.TorrentLineIndex[:0] // clear before repopulating
+	// later we pick items by cursor position
+	// will this break if we add more to UserDownloads later?
 	for index, item := range torrentList {
 		data.UserDownloads[index] = item
 	}
