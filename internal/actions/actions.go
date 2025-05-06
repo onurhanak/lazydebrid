@@ -146,9 +146,8 @@ func GetTorrentContents(g *gocui.Gui, v *gocui.View) map[string]models.Download 
 
 	torrent, ok := data.DownloadMap[id]
 	if !ok {
-		msg := fmt.Sprintf("No torrent found for ID: %s", id)
-		logs.LogEvent(fmt.Errorf(msg))
-		views.UpdateUILog(g, msg, false, nil)
+		logs.LogEvent(fmt.Errorf("No torrent found for ID: %s", id))
+		views.UpdateUILog(g, fmt.Sprintf("No torrent found for ID: %s", id), false, nil)
 		return nil
 	}
 

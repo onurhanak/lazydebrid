@@ -11,7 +11,7 @@ import (
 )
 
 func Keybindings(g *gocui.Gui) error {
-	bind := func(viewname string, key interface{}, mod gocui.Modifier, handler func(*gocui.Gui, *gocui.View) error) {
+	bind := func(viewname string, key any, mod gocui.Modifier, handler func(*gocui.Gui, *gocui.View) error) {
 		if err := g.SetKeybinding(viewname, key, mod, handler); err != nil {
 			log.Fatalf("binding failed: %v", err)
 		}
