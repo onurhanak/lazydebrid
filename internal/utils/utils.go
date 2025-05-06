@@ -2,8 +2,8 @@ package utils
 
 import (
 	"fmt"
-	"lazydebrid/internal/actions"
 	"lazydebrid/internal/config"
+	"lazydebrid/internal/data"
 	"lazydebrid/internal/models"
 	"strings"
 
@@ -25,7 +25,7 @@ func RenderList(g *gocui.Gui) error {
 		return err
 	}
 
-	for _, torrentItem := range actions.UserDownloads {
+	for _, torrentItem := range data.UserDownloads {
 		if config.SearchQuery() == "" || Match(torrentItem.Filename, config.SearchQuery()) {
 			_, err := fmt.Fprintln(v, torrentItem.Filename)
 			if err != nil {

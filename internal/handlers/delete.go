@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"lazydebrid/internal/actions"
+	"lazydebrid/internal/views"
 
 	"github.com/jroimartin/gocui"
 )
@@ -11,7 +12,7 @@ func HandleDeleteTorrent(g *gocui.Gui, v *gocui.View) error {
 	actions.DeleteTorrent(g, v)
 
 	g.Update(func(g *gocui.Gui) error {
-		PopulateViews(g)
+		views.PopulateViews(g)
 		return nil
 	})
 	return nil

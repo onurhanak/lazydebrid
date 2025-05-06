@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"lazydebrid/internal/config"
+	"lazydebrid/internal/data"
 	"lazydebrid/internal/logs"
 	"lazydebrid/internal/models"
 	"lazydebrid/internal/views"
@@ -29,19 +30,6 @@ const (
 	torrentsDeleteURL      = torrentsEndpointURL + "/delete/"
 	torrentsSelectFilesURL = torrentsEndpointURL + "/selectFiles/"
 )
-
-var (
-	UserDownloads   []models.Torrent
-	DownloadMap     = make(map[string]models.Torrent)
-	ActiveDownloads []models.ActiveDownload
-	FilesMap        = make(map[string]models.Download)
-)
-
-type LineMapping struct {
-	ID string
-}
-
-var TorrentLineIndex []string
 
 func newRequest(method, urlStr string, body io.Reader) (*http.Request, error) {
 	req, err := http.NewRequest(method, urlStr, body)
@@ -89,7 +77,7 @@ func DeleteTorrent(g *gocui.Gui, v *gocui.View) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNoContent {
-		ActiveDownloads = RemoveItem(ActiveDownloads, line)
+		data.ActiveDownloads = RemoveItem(data.ActiveDownloads, line)
 		views.UpdateUILog(g, fmt.Sprintf("Deleted torrent: %s", line), true, nil)
 	} else {
 		msg, _ := io.ReadAll(resp.Body)
@@ -125,8 +113,8 @@ func AddFilesToDebrid(downloadID string) bool {
 }
 
 func SendLinkToAPI(magnetLink string) (string, error) {
-	data := url.Values{"magnet": {magnetLink}}
-	req, err := newRequest("POST", torrentsAddMagnetURL, strings.NewReader(data.Encode()))
+	postData := url.Values{"magnet": {magnetLink}}
+	req, err := newRequest("POST", torrentsAddMagnetURL, strings.NewReader(postData.Encode()))
 	if err != nil {
 		return "", err
 	}
@@ -148,8 +136,8 @@ func SendLinkToAPI(magnetLink string) (string, error) {
 		return "", fmt.Errorf("error decoding response: %w", err)
 	}
 
-	ActiveDownloads = append(ActiveDownloads, result)
-	log.Printf("ActiveDownloads now: %d entries", len(ActiveDownloads))
+	data.ActiveDownloads = append(data.ActiveDownloads, result)
+	log.Printf("ActiveDownloads now: %d entries", len(data.ActiveDownloads))
 	if !AddFilesToDebrid(result.ID) {
 		return "", fmt.Errorf("magnet added but failed to select files")
 	}
@@ -226,10 +214,10 @@ func DownloadFile(torrent models.Download) bool {
 
 func GetSelectedTorrentID(v *gocui.View) (string, error) {
 	_, cy := v.Cursor()
-	if cy < 0 || cy >= len(TorrentLineIndex) {
+	if cy < 0 || cy >= len(data.TorrentLineIndex) {
 		return "", fmt.Errorf("invalid cursor line index: %d", cy)
 	}
-	return TorrentLineIndex[cy], nil
+	return data.TorrentLineIndex[cy], nil
 }
 
 func GetTorrentContents(g *gocui.Gui, v *gocui.View) map[string]models.Download {
@@ -239,7 +227,7 @@ func GetTorrentContents(g *gocui.Gui, v *gocui.View) map[string]models.Download 
 		return nil
 	}
 
-	torrent, ok := DownloadMap[id]
+	torrent, ok := data.DownloadMap[id]
 	if !ok {
 		log.Printf("No torrent found for ID: %s", id)
 		return nil
@@ -252,11 +240,11 @@ func GetTorrentContents(g *gocui.Gui, v *gocui.View) map[string]models.Download 
 	}
 
 	var errorLog []string
-	FilesMap = make(map[string]models.Download)
+	data.FilesMap = make(map[string]models.Download)
 
 	for _, link := range torrent.Links {
-		data := url.Values{"link": {link}}
-		req, _ := newRequest("POST", baseURL+"/unrestrict/link/", strings.NewReader(data.Encode()))
+		postData := url.Values{"link": {link}}
+		req, _ := newRequest("POST", baseURL+"/unrestrict/link/", strings.NewReader(postData.Encode()))
 		resp, _ := doRequest(req)
 		response, _ := readResponse(resp)
 
@@ -274,7 +262,7 @@ func GetTorrentContents(g *gocui.Gui, v *gocui.View) map[string]models.Download 
 		}
 
 		if torrentFile.Filename != "" {
-			FilesMap[torrentFile.Filename] = torrentFile
+			data.FilesMap[torrentFile.Filename] = torrentFile
 		}
 	}
 
@@ -287,7 +275,7 @@ func GetTorrentContents(g *gocui.Gui, v *gocui.View) map[string]models.Download 
 		})
 	}
 
-	return FilesMap
+	return data.FilesMap
 }
 
 func GetUserTorrents() map[string]models.Torrent {
@@ -319,11 +307,11 @@ func GetUserTorrents() map[string]models.Torrent {
 	}
 
 	for _, item := range list {
-		TorrentLineIndex = append(TorrentLineIndex, item.Filename)
+		data.TorrentLineIndex = append(data.TorrentLineIndex, item.Filename)
 		result[item.Filename] = item
 	}
-	DownloadMap = result
-	UserDownloads = list
+	data.DownloadMap = result
+	data.UserDownloads = list
 
 	return result
 }

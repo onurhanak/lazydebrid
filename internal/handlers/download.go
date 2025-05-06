@@ -8,6 +8,7 @@ import (
 
 	"lazydebrid/internal/actions"
 	"lazydebrid/internal/config"
+	"lazydebrid/internal/data"
 	"lazydebrid/internal/models"
 	"lazydebrid/internal/views"
 )
@@ -28,7 +29,7 @@ func startDownload(g *gocui.Gui, item models.Download) {
 
 func DownloadAll(g *gocui.Gui, _ *gocui.View) error {
 
-	for _, item := range actions.FilesMap {
+	for _, item := range data.FilesMap {
 		go func(dlItem models.Download) {
 			startDownload(g, dlItem)
 		}(item)
@@ -38,7 +39,7 @@ func DownloadAll(g *gocui.Gui, _ *gocui.View) error {
 }
 
 func DownloadSelectedFile(g *gocui.Gui, v *gocui.View) error {
-	item, err := getSelectedItem(v)
+	item, err := views.GetSelectedItem(v)
 	if err != nil {
 		return err
 	}
@@ -47,7 +48,7 @@ func DownloadSelectedFile(g *gocui.Gui, v *gocui.View) error {
 }
 
 func CopyDownloadLink(g *gocui.Gui, v *gocui.View) error {
-	item, err := getSelectedItem(v)
+	item, err := views.GetSelectedItem(v)
 	if err != nil {
 		return err
 	}

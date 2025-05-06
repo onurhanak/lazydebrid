@@ -25,7 +25,7 @@ func CursorDown(g *gocui.Gui, v *gocui.View) error {
 	}
 
 	if g.CurrentView().Name() == "torrents" {
-		return UpdateDetails(g, v)
+		return views.UpdateDetails(g, v)
 	}
 	return nil
 }
@@ -45,7 +45,7 @@ func CursorUp(g *gocui.Gui, v *gocui.View) error {
 	}
 
 	if g.CurrentView().Name() == "torrents" {
-		return UpdateDetails(g, v)
+		return views.UpdateDetails(g, v)
 	}
 	return nil
 }

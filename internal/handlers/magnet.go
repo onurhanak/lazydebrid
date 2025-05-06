@@ -30,7 +30,7 @@ func HandleAddMagnetLink(g *gocui.Gui, input string) error {
 			true,
 			nil)
 		// update activeTorrentsView
-		PopulateViews(g)
+		views.PopulateViews(g)
 
 	} else {
 

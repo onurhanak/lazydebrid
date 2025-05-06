@@ -16,7 +16,7 @@ func SearchKeyPress(g *gocui.Gui, v *gocui.View) error {
 	}
 
 	torrentsView, _ := g.View(views.ViewTorrents)
-	if err := UpdateDetails(g, torrentsView); err != nil {
+	if err := views.UpdateDetails(g, torrentsView); err != nil {
 		return err
 	}
 
