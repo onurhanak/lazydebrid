@@ -116,30 +116,37 @@ func GetTorrentStatus(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
 
-func DownloadFile(torrent models.TorrentFileDetailed) bool {
+func DownloadFile(torrent models.TorrentFileDetailed) error {
 	path := filepath.Join(config.DownloadPath(), torrent.Filename)
 
+	if _, err := os.Stat(path); err == nil {
+		logs.LogEvent(fmt.Errorf("file already exists, skipping: %s", path))
+		return err
+	}
+	// TODO
+	// this request does not require authorization
+	// but still should use a shared client
 	resp, err := http.Get(torrent.Download)
 	if err != nil {
 		logs.LogEvent(fmt.Errorf("failed to GET %s: %w", torrent.Download, err))
-		return false
+		return err
 	}
 	defer resp.Body.Close()
 
 	out, err := os.Create(path)
 	if err != nil {
 		logs.LogEvent(fmt.Errorf("failed to create file %s: %w", path, err))
-		return false
+		return err
 	}
 	defer out.Close()
 
 	if _, err := io.Copy(out, resp.Body); err != nil {
 		logs.LogEvent(fmt.Errorf("failed to write to file %s: %w", path, err))
-		return false
+		return err
 	}
 
 	logs.LogEvent(fmt.Errorf("downloaded: %s", path))
-	return true
+	return nil
 }
 
 func GetTorrentContents(g *gocui.Gui, v *gocui.View) map[string]models.TorrentFileDetailed {
@@ -159,7 +166,7 @@ func GetTorrentContents(g *gocui.Gui, v *gocui.View) map[string]models.TorrentFi
 
 	files := make(map[string]models.TorrentFileDetailed)
 	var errors []string
-
+	success := false
 	for _, link := range torrent.Links {
 		file, err := api.UnrestrictLink(link)
 		if err != nil {
@@ -168,6 +175,12 @@ func GetTorrentContents(g *gocui.Gui, v *gocui.View) map[string]models.TorrentFi
 			continue
 		}
 		files[file.Filename] = file
+		success = true
+	}
+
+	if !success {
+		views.UpdateUILog(g, "All unrestrict attempts failed", nil)
+		return nil
 	}
 
 	data.FilesMap = files
@@ -198,6 +211,12 @@ func GetUserTorrents() map[int]models.Torrent {
 		logs.LogEvent(fmt.Errorf("failed to parse torrent list: %w", err))
 		return nil
 	}
+
+	// TODO
+	// necessary for now to have correct item ordering
+	// after deletes
+	// needs a better solution than emptying the map
+	data.UserDownloads = make(map[int]models.Torrent)
 
 	// essentially a map of which line number refers to which torrent
 	// this is necessary because gocui results in changed filenames

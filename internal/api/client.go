@@ -44,6 +44,7 @@ func DoRequest(req *http.Request) ([]byte, error) {
 		return nil, fmt.Errorf("HTTP %d: %s", resp.StatusCode, body)
 	}
 
+	// Check for Real-Debrid-style error in JSON
 	var rdResp struct {
 		Error     string `json:"error"`
 		ErrorCode int    `json:"error_code"`

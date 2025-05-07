@@ -57,15 +57,6 @@ func Layout(g *gocui.Gui) error {
 		torrentsView.Highlight = true
 		torrentsView.Wrap = false
 		torrentsView.SelFgColor = gocui.ColorGreen
-
-		// Populate later in main.go to avoid import cycle
-		//
-		//for _, item := range actions.UserDownloads {
-		//	_, err := fmt.Fprintln(torrentsView, item.Filename)
-		//	if err != nil {
-		//		return err
-		//	}
-		//}
 		err = torrentsView.SetCursor(0, 0)
 		if err != nil {
 			return err
@@ -84,7 +75,7 @@ func Layout(g *gocui.Gui) error {
 	if activeTorrentsView, err := g.SetView(ViewActiveTorrents, splitX+1, activeTop, maxX-1, activeBottom); err != nil && err != gocui.ErrUnknownView {
 		return err
 	} else if err == nil {
-		activeTorrentsView.Title = "Active Downloads"
+		activeTorrentsView.Title = "Active Debrid Downloads"
 		activeTorrentsView.Highlight = true
 		activeTorrentsView.Wrap = false
 		activeTorrentsView.SelFgColor = gocui.ColorGreen

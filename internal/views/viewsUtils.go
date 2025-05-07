@@ -111,6 +111,7 @@ func GetSelectedTorrent(v *gocui.View) (torrent models.Torrent, cursorPosition i
 	return data.UserDownloads[cy], cy, nil
 }
 
+// TODO
 // this wont work if the viewport is too small to show the entire id
 func GetSelectedActiveDownload(v *gocui.View) (string, error) {
 	_, cy := v.Cursor()

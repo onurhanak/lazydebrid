@@ -14,21 +14,27 @@ import (
 
 const maxConcurrentDownloads = 5
 
-// this should also check for download slot probably
+// TODO
+// this should also check for download slot
 func handleStartDownload(g *gocui.Gui, torrentFile models.TorrentFileDetailed) {
-	log := func(msg string, success bool, err error) {
+	startMsg := fmt.Sprintf("Starting download: %s → %s", torrentFile.Filename, config.DownloadPath())
+	endMsg := fmt.Sprintf("Downloaded: %s", torrentFile.Filename)
+
+	g.Update(func(g *gocui.Gui) error {
+		views.UpdateUILog(g, startMsg, nil)
+		return nil
+	})
+
+	if err := actions.DownloadFile(torrentFile); err == nil {
 		g.Update(func(g *gocui.Gui) error {
-			views.UpdateUILog(g, msg, err)
+			views.UpdateUILog(g, endMsg, nil)
 			return nil
 		})
-	}
-
-	log(fmt.Sprintf("Downloading %s to %s", torrentFile.Filename, config.DownloadPath()), true, nil)
-
-	if actions.DownloadFile(torrentFile) {
-		log(fmt.Sprintf("Downloaded %s to %s", torrentFile.Filename, config.DownloadPath()), true, nil)
 	} else {
-		log(fmt.Sprintf("Failed to download %s", torrentFile.Filename), false, fmt.Errorf("download failed"))
+		g.Update(func(g *gocui.Gui) error {
+			views.UpdateUILog(g, fmt.Sprintf("Failed to download %s", torrentFile.Filename), err)
+			return nil
+		})
 	}
 }
 
