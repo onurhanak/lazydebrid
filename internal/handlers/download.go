@@ -18,7 +18,7 @@ const maxConcurrentDownloads = 5
 func handleStartDownload(g *gocui.Gui, torrentFile models.TorrentFileDetailed) {
 	log := func(msg string, success bool, err error) {
 		g.Update(func(g *gocui.Gui) error {
-			views.UpdateUILog(g, msg, success, err)
+			views.UpdateUILog(g, msg, err)
 			return nil
 		})
 	}

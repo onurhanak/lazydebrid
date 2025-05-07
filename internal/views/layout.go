@@ -89,15 +89,6 @@ func Layout(g *gocui.Gui) error {
 		activeTorrentsView.Wrap = false
 		activeTorrentsView.SelFgColor = gocui.ColorGreen
 		activeTorrentsView.Clear()
-
-		// Populate later in main.go to avoid import cycle
-		//
-		//for _, item := range actions.ActiveDownloads {
-		//	_, err = fmt.Fprintln(activeTorrentsView, item.ID)
-		//	if err != nil {
-		//		return err
-		//	}
-		//}
 		err = activeTorrentsView.SetCursor(0, 0)
 		if err != nil {
 			return err

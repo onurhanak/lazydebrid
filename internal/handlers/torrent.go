@@ -36,13 +36,13 @@ func HandleDeleteTorrent(g *gocui.Gui, v *gocui.View) error {
 
 	err = actions.DeleteTorrent(torrentID, cy, currentViewName)
 	if err != nil {
-		views.UpdateUILog(g, fmt.Sprintf("Failed to delete torrent: %s\nError: %s", torrentID, err), false, nil)
+		views.UpdateUILog(g, "Failed to delete torrent:", err)
 		return err
 	}
 
 	g.Update(func(g *gocui.Gui) error {
 
-		views.UpdateUILog(g, fmt.Sprintf("Deleted torrent: %s", torrentID), true, nil)
+		views.UpdateUILog(g, fmt.Sprintf("Deleted torrent: %s", torrentID), nil)
 		views.PopulateViews(g)
 		return nil
 	})
@@ -50,9 +50,8 @@ func HandleDeleteTorrent(g *gocui.Gui, v *gocui.View) error {
 }
 
 func HandleTorrentFileContents(g *gocui.Gui, v *gocui.View) error {
-	views.UpdateUILog(g, "Getting file contents...", true, nil)
+	views.UpdateUILog(g, "Getting file contents...", nil)
 
-	// Make a shallow copy of view cursor or content here if needed in future
 	go func() {
 		torrentFiles := actions.GetTorrentContents(g, v)
 

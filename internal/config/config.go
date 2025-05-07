@@ -80,13 +80,14 @@ func LoadUserSettings() error {
 	return nil
 }
 
+// should do checks for the download path
+// when set interactively too
 func SaveSetting(key, value string) error {
 	configPath, _, err := ConfigPath()
 	if err != nil {
 		return err
 	}
 
-	// Re-load the settings
 	data, err := os.ReadFile(configPath)
 	if err == nil {
 		if err := json.Unmarshal(data, &settings); err != nil {
@@ -94,6 +95,11 @@ func SaveSetting(key, value string) error {
 		}
 	}
 
+	if key == "downloadPath" {
+		if _, err := os.Stat(value); os.IsNotExist(err) {
+			return err
+		}
+	}
 	settings[key] = strings.TrimSpace(value)
 
 	content, err := json.MarshalIndent(settings, "", "  ")
@@ -105,11 +111,11 @@ func SaveSetting(key, value string) error {
 		return fmt.Errorf("failed to save config: %w", err)
 	}
 
-	// Sync globals if key was updated
 	switch key {
 	case "apiToken":
 		userApiToken = settings[key]
 	case "downloadPath":
+
 		userDownloadPath = settings[key]
 	}
 

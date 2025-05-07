@@ -97,20 +97,20 @@ func GetTorrentStatus(g *gocui.Gui, v *gocui.View) error {
 
 	body, err := api.DoRequest(req)
 	if err != nil {
-		views.UpdateUILog(g, fmt.Sprintf("Failed to get torrent status: %v", err), false, nil)
+		views.UpdateUILog(g, "Failed to get torrent status:", err)
 		return err
 	}
 
 	var status models.Torrent
 	if err := json.Unmarshal(body, &status); err != nil {
 		logs.LogEvent(err)
-		views.UpdateUILog(g, "Failed to decode torrent status", false, err)
+		views.UpdateUILog(g, "Failed to decode torrent status", err)
 		return fmt.Errorf("error decoding status: %w", err)
 	}
 
 	views.UpdateUILog(g, fmt.Sprintf(
 		"\nStatus for %s:\n  Status: %s\n  Progress: %d%%\n  Added: %s\n  Files: %d\n\n",
-		status.Filename, status.Status, status.Progress, status.Added, len(status.Files)), true, nil)
+		status.Filename, status.Status, status.Progress, status.Added, len(status.Files)), nil)
 
 	return nil
 }
@@ -145,7 +145,7 @@ func GetTorrentContents(g *gocui.Gui, v *gocui.View) map[string]models.TorrentFi
 	torrent, _, err := views.GetSelectedTorrent(v)
 	if err != nil {
 		logs.LogEvent(fmt.Errorf("selection error: %w", err))
-		views.UpdateUILog(g, "No torrent selected", false, nil)
+		views.UpdateUILog(g, "No torrent selected", nil)
 		return nil
 	}
 
@@ -172,7 +172,7 @@ func GetTorrentContents(g *gocui.Gui, v *gocui.View) map[string]models.TorrentFi
 	data.FilesMap = files
 
 	if len(errors) > 0 {
-		views.UpdateUILog(g, strings.Join(errors, "; "), false, nil)
+		views.UpdateUILog(g, strings.Join(errors, "; "), nil)
 	}
 
 	return files

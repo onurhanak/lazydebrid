@@ -7,24 +7,22 @@ import (
 	"github.com/jroimartin/gocui"
 )
 
-func LogInfo(v *gocui.View, errorString string) {
+func logInfo(v *gocui.View, msg string, err error) {
 	time := logs.GetNow()
-	fmt.Fprintf(v, "\n[ %s ] %s", time, errorString)
+	if err != nil {
+		fmt.Fprintf(v, "\n[ %s ]\n%s", time, err)
+	} else {
+		fmt.Fprintf(v, "\n[ %s ]\n%s", time, msg)
+	}
 }
 
-func LogError(v *gocui.View, errorString string, err error) {
-	time := logs.GetNow()
-	fmt.Fprintf(v, "\n[ %s ]\n%s %s", time, errorString, err)
-}
-
-func UpdateUILog(g *gocui.Gui, message string, isInfo bool, err error) {
-	infoView := GetView(g, ViewInfo)
+func UpdateUILog(g *gocui.Gui, message string, err error) {
 	g.Update(func(g *gocui.Gui) error {
-		if isInfo {
-			LogInfo(infoView, message)
-		} else {
-			LogError(infoView, message, err)
+		v := GetView(g, ViewInfo)
+		if v == nil {
+			return nil
 		}
+		logInfo(v, message, err)
 		return nil
 	})
 }

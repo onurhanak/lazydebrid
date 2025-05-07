@@ -108,7 +108,6 @@ func GetSelectedTorrent(v *gocui.View) (torrent models.Torrent, cursorPosition i
 	if cy >= len(data.UserDownloads) {
 		return emptyTorrent, cy, fmt.Errorf("cursor index %d out of bounds (max %d)", cy, len(data.UserDownloads)-1)
 	}
-	log.Println(data.UserDownloads[cy])
 	return data.UserDownloads[cy], cy, nil
 }
 
@@ -142,7 +141,7 @@ func PopulateViews(g *gocui.Gui) {
 	// temporary. needs a centralized way that uses the error model
 	if len(data.UserDownloads) == 0 {
 		if len(data.UserDownloads) == 0 && !warnedNoTorrents {
-			UpdateUILog(g, "API returned no torrents, is your API token correct?", true, nil)
+			UpdateUILog(g, "API returned no torrents, is your API token correct?", nil)
 			warnedNoTorrents = true
 		}
 	}
@@ -207,11 +206,11 @@ func CopyDownloadLink(g *gocui.Gui, v *gocui.View) error {
 	}
 
 	if err := clipboard.WriteAll(item.Download); err != nil {
-		UpdateUILog(g, fmt.Sprintf("Failed to copy download link: %s", err), false, err)
+		UpdateUILog(g, "Failed to copy download link:", err)
 		return err
 	}
 
-	UpdateUILog(g, fmt.Sprintf("Copied download link for %s", item.Filename), true, nil)
+	UpdateUILog(g, fmt.Sprintf("Copied download link for %s", item.Filename), nil)
 	return nil
 }
 
@@ -247,7 +246,10 @@ func ShowTorrentFiles(g *gocui.Gui, v *gocui.View, fileMap map[string]models.Tor
 			fmt.Fprintln(detailsView, strings.TrimSpace(key))
 		}
 
-		_, _ = g.SetCurrentView(ViewDetails)
+		_, err := g.SetCurrentView(ViewDetails)
+		if err != nil {
+			logs.LogEvent(err)
+		}
 		return nil
 	})
 }

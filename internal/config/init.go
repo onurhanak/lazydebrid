@@ -61,7 +61,6 @@ func SetupConfigFromUserInput() error {
 		downloadPath = filepath.Join(usr.HomeDir, "Downloads")
 	}
 
-	// Ensure download path exists and is writable
 	if stat, err := os.Stat(downloadPath); os.IsNotExist(err) {
 		fmt.Printf("Download path '%s' does not exist. Create it? (y/n): ", downloadPath)
 		resp, _ := reader.ReadString('\n')
