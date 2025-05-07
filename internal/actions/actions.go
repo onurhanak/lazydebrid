@@ -23,11 +23,12 @@ import (
 
 // not sure if this will work
 func DeleteTorrent(g *gocui.Gui, v *gocui.View) error {
+
 	torrent, err := views.GetSelectedTorrent(v)
-	torrentID := torrent.ID
-	if err != nil || strings.TrimSpace(torrentID) == "" {
+	if err != nil || strings.TrimSpace(torrent.ID) == "" {
 		return fmt.Errorf("no torrent selected")
 	}
+	torrentID := torrent.ID
 
 	req, err := api.NewRequest("DELETE", api.TorrentsDeleteURL+torrentID, nil)
 	if err != nil {
