@@ -213,8 +213,7 @@ func GetUserTorrents() map[int]models.Torrent {
 	}
 
 	// TODO
-	// necessary for now to have correct item ordering
-	// after deletes
+	// necessary for now to have correct item ordering after deletes
 	// needs a better solution than emptying the map
 	data.UserDownloads = make(map[int]models.Torrent)
 
