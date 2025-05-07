@@ -1,0 +1,43 @@
+:root {
+  --theme-color: #61dafb; 
+  --sidebar-background: #111;
+  --sidebar-nav-link-color: #ccc;
+  --sidebar-nav-link-active-color: #fff;
+  --sidebar-nav-link-hover-color: #61dafb;
+}
+
+body {
+  font-family: 'Fira Sans', sans-serif;
+  color: #e0e0e0;
+  background-color: #121212;
+}
+
+a {
+  color: var(--theme-color);
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+table {
+  background-color: #121212 !important;
+  color: #e0e0e0;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th, td {
+  background-color: #000 !important;
+  color: #e0e0e0 !important;
+  border: 1px solid #444;
+  padding: 8px;
+}
+
+th {
+  font-weight: bold;
+}
+
+table, th, td {
+  border-color: #333;
+}

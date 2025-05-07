@@ -1,0 +1,3 @@
+- [Home](/README.md)
+- [Configuration](/configuration.md)
+- [Keybindings](/keybindings.md)
