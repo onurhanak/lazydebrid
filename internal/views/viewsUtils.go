@@ -68,11 +68,6 @@ func RenderList(g *gocui.Gui) error {
 	return nil
 }
 
-func GetCurrentLine(v *gocui.View) (string, error) {
-	_, cy := v.Cursor()
-	line, err := v.Line(cy)
-	return line, err
-}
 func GetView(g *gocui.Gui, name string) *gocui.View {
 	v, _ := g.View(name)
 	return v
@@ -112,13 +107,23 @@ func GetSelectedTorrent(v *gocui.View) (models.Torrent, error) {
 	return data.UserDownloads[cy], nil
 }
 
+// this wont work if the viewport is too small to show the entire id
+func GetSelectedActiveDownload(v *gocui.View) (string, error) {
+	_, cy := v.Cursor()
+	line, err := v.Line(cy)
+	return line, err
+}
+
 func GetSelectedTorrentFile(v *gocui.View) (models.TorrentFileDetailed, error) {
 	_, cy := v.Cursor()
 	line, err := v.Line(cy)
+
 	if err != nil {
 		return models.TorrentFileDetailed{}, fmt.Errorf("unable to get selected line: %w", err)
 	}
+
 	torrentFile, ok := data.FilesMap[line]
+
 	if !ok {
 		return models.TorrentFileDetailed{}, fmt.Errorf("no download item found for selected line")
 	}

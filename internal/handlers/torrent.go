@@ -7,10 +7,12 @@ import (
 	"github.com/jroimartin/gocui"
 )
 
-// does not delete from view
 func HandleDeleteTorrent(g *gocui.Gui, v *gocui.View) error {
-	actions.DeleteTorrent(g, v)
+	if err := actions.DeleteTorrent(g, v); err != nil {
+		return err
+	}
 
+	// does not update the view for some reason
 	g.Update(func(g *gocui.Gui) error {
 		views.PopulateViews(g)
 		return nil
@@ -21,6 +23,7 @@ func HandleDeleteTorrent(g *gocui.Gui, v *gocui.View) error {
 func HandleTorrentFileContents(g *gocui.Gui, v *gocui.View) error {
 	views.UpdateUILog(g, "Getting file contents...", true, nil)
 
+	// Make a shallow copy of view cursor or content here if needed in future
 	go func() {
 		torrentFiles := actions.GetTorrentContents(g, v)
 
