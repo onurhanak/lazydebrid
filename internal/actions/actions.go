@@ -92,20 +92,21 @@ func GetTorrentStatus(g *gocui.Gui, v *gocui.View) error {
 
 	req, err := api.NewRequest("GET", api.TorrentsStatusURL+torrentID, nil)
 	if err != nil {
-		return fmt.Errorf("failed to create status request: %w", err)
+		views.UpdateUILog(g, "failed to create status request", err)
+		return nil
 	}
 
 	body, err := api.DoRequest(req)
 	if err != nil {
 		views.UpdateUILog(g, "Failed to get torrent status:", err)
-		return err
+		return nil
 	}
 
 	var status models.Torrent
 	if err := json.Unmarshal(body, &status); err != nil {
 		logs.LogEvent(err)
 		views.UpdateUILog(g, "Failed to decode torrent status", err)
-		return fmt.Errorf("error decoding status: %w", err)
+		return nil
 	}
 
 	views.UpdateUILog(g, fmt.Sprintf(

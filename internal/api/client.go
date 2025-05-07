@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -32,13 +33,26 @@ func DoRequest(req *http.Request) ([]byte, error) {
 	}
 	defer resp.Body.Close()
 
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		logs.LogEvent(fmt.Errorf("failed reading response: %w", err))
+		return nil, err
+	}
+
 	if resp.StatusCode >= 400 {
-		body, err := io.ReadAll(resp.Body)
-		logs.LogEvent(err)
+		logs.LogEvent(fmt.Errorf("HTTP %d: %s", resp.StatusCode, body))
 		return nil, fmt.Errorf("HTTP %d: %s", resp.StatusCode, body)
 	}
 
-	return io.ReadAll(resp.Body)
+	var rdResp struct {
+		Error     string `json:"error"`
+		ErrorCode int    `json:"error_code"`
+	}
+	if err := json.Unmarshal(body, &rdResp); err == nil && rdResp.ErrorCode != 0 {
+		return nil, fmt.Errorf("realdebrid error: code=%d, msg='%s'", rdResp.ErrorCode, rdResp.Error)
+	}
+
+	return body, nil
 }
 
 func PostForm(urlStr string, data url.Values) ([]byte, error) {

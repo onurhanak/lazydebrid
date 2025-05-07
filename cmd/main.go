@@ -8,12 +8,15 @@ import (
 	"lazydebrid/internal/views"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/jroimartin/gocui"
 )
 
 func init() {
-	logFile, err := os.OpenFile("lazydebrid.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	_, lazyDebridFolderPath, _ := config.ConfigPath()
+	logPath := filepath.Join(lazyDebridFolderPath, "lazydebrid.log")
+	logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
 		log.Fatal("Could not open log file:", err)
 	}
@@ -29,7 +32,7 @@ func main() {
 	if err != nil {
 		_, lazyDebridFolderPath, _ := config.ConfigPath()
 		fmt.Printf("User config is corrupted.\nYou may need to delete %s folder manually.\n", lazyDebridFolderPath)
-		log.Fatalf("Could not not load user settings, bailing. Error: %s", err)
+		log.Fatalf("Could not load user settings, bailing. Error: %s", err)
 	}
 	actions.GetUserTorrents()
 	g, err := gocui.NewGui(gocui.OutputNormal)
@@ -43,20 +46,11 @@ func main() {
 		log.Panicln(err)
 	}
 
-	// g.Update(func(g *gocui.Gui) error {
-	// 	handlers.PopulateViews(g)
-	// 	v, err := g.View("torrents")
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	return handlers.UpdateDetails(g, v)
-	// })
-
 	// delay populate views until views are ready
 	// otherwise active torrents does not show
 	views.OnLayoutReady = views.PopulateViews
 	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
-		log.Panicln(err)
+		log.Fatalf("GUI loop error: %v", err)
 	}
 
 }
