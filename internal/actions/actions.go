@@ -20,7 +20,15 @@ import (
 	"github.com/jroimartin/gocui"
 )
 
-func DeleteTorrent(torrentID string) error {
+func DeleteTorrentFromActiveDownloads(torrentID string) {
+	data.ActiveDownloads = RemoveID(data.ActiveDownloads, torrentID)
+}
+
+func DeleteTorrentFromUserDownloads(cursorPosition int) {
+	delete(data.UserDownloads, cursorPosition)
+}
+
+func DeleteTorrent(torrentID string, cy int, viewName string) error {
 
 	req, err := api.NewRequest("DELETE", api.TorrentsDeleteURL+torrentID, nil)
 	if err != nil {
@@ -32,8 +40,12 @@ func DeleteTorrent(torrentID string) error {
 		return err
 	}
 
-	// if body is empty, it succeeded
-	data.ActiveDownloads = RemoveItem(data.ActiveDownloads, torrentID)
+	if viewName == views.ViewTorrents {
+		DeleteTorrentFromUserDownloads(cy)
+		return nil
+	}
+
+	DeleteTorrentFromActiveDownloads(torrentID)
 
 	return nil
 }
@@ -130,7 +142,7 @@ func DownloadFile(torrent models.TorrentFileDetailed) bool {
 }
 
 func GetTorrentContents(g *gocui.Gui, v *gocui.View) map[string]models.TorrentFileDetailed {
-	torrent, err := views.GetSelectedTorrent(v)
+	torrent, _, err := views.GetSelectedTorrent(v)
 	if err != nil {
 		logs.LogEvent(fmt.Errorf("selection error: %w", err))
 		views.UpdateUILog(g, "No torrent selected", false, nil)

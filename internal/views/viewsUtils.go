@@ -94,17 +94,17 @@ func CloseView(g *gocui.Gui, name string) error {
 	return err
 }
 
-// the next 3 functions seem redundant
-func GetSelectedTorrent(v *gocui.View) (models.Torrent, error) {
+func GetSelectedTorrent(v *gocui.View) (torrent models.Torrent, cursorPosition int, err error) {
 	_, cy := v.Cursor()
 	var emptyTorrent models.Torrent
 	if cy < 0 {
-		return emptyTorrent, fmt.Errorf("cursor is off-screen or uninitialized")
+		return emptyTorrent, cy, fmt.Errorf("cursor is off-screen or uninitialized")
 	}
 	if cy >= len(data.UserDownloads) {
-		return emptyTorrent, fmt.Errorf("cursor index %d out of bounds (max %d)", cy, len(data.UserDownloads)-1)
+		return emptyTorrent, cy, fmt.Errorf("cursor index %d out of bounds (max %d)", cy, len(data.UserDownloads)-1)
 	}
-	return data.UserDownloads[cy], nil
+	log.Println(data.UserDownloads[cy])
+	return data.UserDownloads[cy], cy, nil
 }
 
 // this wont work if the viewport is too small to show the entire id

@@ -44,6 +44,7 @@ func Keybindings(g *gocui.Gui) error {
 	bind(views.ViewTorrents, gocui.KeyEnter, gocui.ModNone, handlers.HandleTorrentFileContents)
 	bind(views.ViewTorrents, '/', gocui.ModNone, views.FocusSearchBar)
 	bind(views.ViewTorrents, '?', gocui.ModNone, handlers.ShowHelpModal)
+	bind(views.ViewTorrents, 'd', gocui.ModNone, handlers.HandleDeleteTorrent)
 
 	bind(views.ViewSearch, gocui.KeyEnter, gocui.ModNone, views.SearchKeyPress)
 
