@@ -14,8 +14,11 @@ import (
 )
 
 func init() {
-	_, lazyDebridFolderPath, _ := config.ConfigPath()
-	logPath := filepath.Join(lazyDebridFolderPath, "lazydebrid.log")
+	cacheDir, err := os.UserCacheDir()
+	if err != nil {
+		log.Fatal("Could not get default cache dir for system. Cannot initialize log file.")
+	}
+	logPath := filepath.Join(cacheDir, "lazydebrid.log")
 	logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
 		log.Fatal("Could not open log file:", err)

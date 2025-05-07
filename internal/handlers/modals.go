@@ -35,29 +35,38 @@ func ShowSetTokenModal(g *gocui.Gui, v *gocui.View) error {
 	})
 }
 
-func ShowHelpModal(g *gocui.Gui, v *gocui.View) error {
-	content := `
-  ── Navigation ─────────────
-  ↑ ↓       Move cursor
-  TAB       Switch view
-  /         Focus search
-
-  ── Actions ────────────────
-  ENTER     Download selected
-  ^C        Copy download link
-  D         Download all files
-
-  ── Management ─────────────
-  ^A        Add magnet link
-  ^P        Set download path
-  ^X        Set API key
-  ^Q        Quit application
-`
-	return views.ShowModal(g, views.ViewHelp, "Shortcuts", content, func(string) error { return nil })
-}
-
 func ShowAddMagnetModal(g *gocui.Gui, v *gocui.View) error {
 	return views.ShowModal(g, views.ViewAddMagnet, "Add Magnet Link", "", func(input string) error {
 		return HandleAddMagnetLink(g, input)
 	})
+}
+
+func ShowHelpModal(g *gocui.Gui, v *gocui.View) error {
+	content := `
+  ── Navigation ─────────────
+  ↑ ↓, j k       Move cursor
+  TAB            Pane forward
+  BACKSPACE      Pane back
+  /              Focus search
+
+  ── Actions ────────────────
+  ENTER, d       Download selected (Details)
+  D              Download all files (Details)
+  ENTER          View torrent files (Torrents)
+  y              Copy download link (Details)
+  a              Add magnet link (Torrents)
+
+  ── Management ─────────────
+  d              Delete torrent (Torrents / Active)
+  s              Check status (Active)
+  ^A             Add magnet modal (global)
+  ^P             Set download path
+  ^X             Set API key
+  ^Q             Quit application
+  ^C             Close modal
+
+  ── Help ───────────────────
+  ?              Show this help
+`
+	return views.ShowModal(g, views.ViewHelp, "Shortcuts", content, func(string) error { return nil })
 }

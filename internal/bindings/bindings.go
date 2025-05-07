@@ -37,6 +37,7 @@ func Keybindings(g *gocui.Gui) error {
 	bind(views.ViewDetails, '/', gocui.ModNone, views.FocusSearchBar)
 	bind(views.ViewDetails, '?', gocui.ModNone, handlers.ShowHelpModal)
 
+	bind(views.ViewTorrents, 'a', gocui.ModNone, handlers.ShowAddMagnetModal)
 	bind(views.ViewTorrents, 'j', gocui.ModNone, views.CursorDown)
 	bind(views.ViewTorrents, 'k', gocui.ModNone, views.CursorUp)
 	bind(views.ViewTorrents, gocui.KeyArrowDown, gocui.ModNone, views.CursorDown)
