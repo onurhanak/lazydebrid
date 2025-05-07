@@ -76,6 +76,12 @@ func CycleFocusToNextView(g *gocui.Gui, v *gocui.View) error {
 
 func CycleFocusToPreviousView(g *gocui.Gui, v *gocui.View) error {
 	currentViewIdx = (currentViewIdx - 1) % len(Views)
+
+	// wrap if we run out of views
+	if currentViewIdx <= 0 {
+		currentViewIdx = len(Views) - 1
+	}
+
 	name := Views[currentViewIdx]
 
 	if _, err := g.SetCurrentView(name); err != nil {

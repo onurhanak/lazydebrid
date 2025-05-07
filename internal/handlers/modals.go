@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"fmt"
+
 	"lazydebrid/internal/config"
 	"lazydebrid/internal/views"
 
@@ -9,14 +11,26 @@ import (
 
 func ShowSetPathModal(g *gocui.Gui, v *gocui.View) error {
 	return views.ShowModal(g, views.ViewSetPath, "Set Download Path", "", func(input string) error {
-		_ = config.SaveSetting("downloadPath", input)
+		if err := config.SaveSetting("downloadPath", input); err != nil {
+			return fmt.Errorf("failed to save download path: %w", err)
+		}
+		g.Update(func(g *gocui.Gui) error {
+			views.UpdateUILog(g, "Download path updated.", true, nil)
+			return nil
+		})
 		return nil
 	})
 }
 
 func ShowSetTokenModal(g *gocui.Gui, v *gocui.View) error {
 	return views.ShowModal(g, views.ViewSetToken, "Set API Token", "", func(input string) error {
-		_ = config.SaveSetting("apiToken", input)
+		if err := config.SaveSetting("apiToken", input); err != nil {
+			return fmt.Errorf("failed to save API token: %w", err)
+		}
+		g.Update(func(g *gocui.Gui) error {
+			views.UpdateUILog(g, "API token updated.", true, nil)
+			return nil
+		})
 		return nil
 	})
 }

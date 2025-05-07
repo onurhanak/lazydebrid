@@ -14,6 +14,7 @@ import (
 
 const maxConcurrentDownloads = 5
 
+// this should also check for download slot probably
 func handleStartDownload(g *gocui.Gui, torrentFile models.TorrentFileDetailed) {
 	log := func(msg string, success bool, err error) {
 		g.Update(func(g *gocui.Gui) error {
