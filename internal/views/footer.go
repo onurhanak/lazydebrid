@@ -2,10 +2,18 @@ package views
 
 import (
 	"fmt"
-	"lazydebrid/internal/logs"
 
 	"github.com/jroimartin/gocui"
 )
+
+var footerKeyMap = map[string]string{
+	ViewTorrents:       TorrentsKeys,
+	ViewSearch:         SearchKeys,
+	ViewActiveTorrents: ActiveDownloadsKeys,
+	ViewDetails:        DetailsKeys,
+	ViewAddMagnet:      ModalKeys,
+	ViewHelp:           ModalKeys,
+}
 
 func UpdateFooter(g *gocui.Gui) error {
 	current := g.CurrentView()
@@ -14,26 +22,18 @@ func UpdateFooter(g *gocui.Gui) error {
 	}
 
 	viewName := current.Name()
+
 	keysView, err := g.View(ViewFooter)
 	if err != nil {
-		logs.LogEvent(fmt.Errorf("Cannot get keysView: %s", err))
-		return err
+		return fmt.Errorf("cannot get footer view: %w", err)
 	}
 	keysView.Clear()
 
-	switch viewName {
-	case ViewTorrents:
-		fmt.Fprint(keysView, TorrentsKeys)
-	case ViewSearch:
-		fmt.Fprint(keysView, SearchKeys)
-	case ViewActiveTorrents:
-		fmt.Fprint(keysView, ActiveDownloadsKeys)
-	case ViewDetails:
-		fmt.Fprint(keysView, DetailsKeys)
-	case ViewAddMagnet, ViewHelp:
-		fmt.Fprint(keysView, ModalKeys)
-	default:
+	if keys, ok := footerKeyMap[viewName]; ok {
+		fmt.Fprint(keysView, keys)
+	} else {
 		fmt.Fprint(keysView, MainKeys)
 	}
+
 	return nil
 }

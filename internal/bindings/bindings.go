@@ -55,8 +55,11 @@ func Keybindings(g *gocui.Gui) error {
 	bind("", gocui.KeyCtrlX, gocui.ModNone, handlers.ShowSetTokenModal)
 	bind("", gocui.KeyCtrlQ, gocui.ModNone, handlers.Quit)
 	bind("", gocui.KeyTab, gocui.ModNone, views.CycleFocusToNextView)
-	// this causes problems and should not work in search bar
-	bind("", gocui.KeyBackspace2, gocui.ModNone, views.CycleFocusToPreviousView)
+
+	bind(views.ViewActiveTorrents, gocui.KeyBackspace2, gocui.ModNone, views.CycleFocusToPreviousView)
+	bind(views.ViewTorrents, gocui.KeyBackspace2, gocui.ModNone, views.CycleFocusToPreviousView)
+	bind(views.ViewInfo, gocui.KeyBackspace2, gocui.ModNone, views.CycleFocusToPreviousView)
+	bind(views.ViewDetails, gocui.KeyBackspace2, gocui.ModNone, views.CycleFocusToPreviousView)
 
 	if len(bindErrors) > 0 {
 		return fmt.Errorf("some keybindings failed: %v", bindErrors)
