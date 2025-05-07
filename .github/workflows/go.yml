@@ -1,0 +1,34 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # trigger on version tags 
+      
+permissions:
+  contents: write # needed to publish a release
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.24'
+
+      - name: Build binary
+        run: |
+          mkdir -p dist
+          go build -o dist/lazydebrid ./cmd/main.go
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2.2.2
+        with:
+          files: dist/lazydebrid
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
