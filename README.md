@@ -43,10 +43,10 @@ go build -o lazydebrid ./cmd/lazydebrid
 Move the built binary to your preferred location (e.g., `/usr/local/bin/`).
 
 ## Configuration
-See [configuration](https://github.com/onurhanak/lazydebrid/docs/configuration.md) for how to set your API token and customize download path.
+See [configuration](https://github.com/onurhanak/lazydebrid/blob/main/docs/configuration.md) for how to set your API token and customize download path.
 
 ## Keybindings
-See [keybindings](https://github.com/onurhanak/lazydebrid/docs/keybindings.md) for a full list of keyboard shortcuts and navigation controls.
+See [keybindings](https://github.com/onurhanak/lazydebrid/blob/main/docs/keybindings.md) for a full list of keyboard shortcuts and navigation controls.
 
 ## Acknowledgments
 
