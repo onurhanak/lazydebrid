@@ -19,13 +19,11 @@ You can download the latest prebuilt binary for your system from the [Releases](
 
 1. Go to the [Releases](https://github.com/onurhanak/lazydebrid/releases).
 2. Download the binary for your platform (`lazydebrid-linux`, `lazydebrid-darwin`, `lazydebrid-windows.exe`, etc.).
-3. Make it executable:
+3. Make it executable if you are using linux:
 ```bash
    chmod +x lazydebrid-<your-platform>
 ```
-
-4. Move it somewhere in your `PATH`, for example:
-
+then move it somewhere in your `PATH`, for example:
 ```bash
    mv lazydebrid-<your-platform> /usr/local/bin/lazydebrid
 ```
