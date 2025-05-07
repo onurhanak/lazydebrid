@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -21,14 +20,7 @@ import (
 	"github.com/jroimartin/gocui"
 )
 
-// this should also work for already downloaded torrents
-// should take torrent id as param
-func DeleteTorrent(g *gocui.Gui, v *gocui.View) error {
-
-	torrentID, err := views.GetSelectedActiveDownload(v)
-	if err != nil || strings.TrimSpace(torrentID) == "" {
-		return fmt.Errorf("no torrent selected")
-	}
+func DeleteTorrent(torrentID string) error {
 
 	req, err := api.NewRequest("DELETE", api.TorrentsDeleteURL+torrentID, nil)
 	if err != nil {
@@ -37,15 +29,12 @@ func DeleteTorrent(g *gocui.Gui, v *gocui.View) error {
 
 	_, err = api.DoRequest(req)
 	if err != nil {
-		views.UpdateUILog(g, fmt.Sprintf("Failed to delete torrent: %s\nError: %s", torrentID, err), false, nil)
 		return err
 	}
 
 	// if body is empty, it succeeded
 	data.ActiveDownloads = RemoveItem(data.ActiveDownloads, torrentID)
-	views.UpdateUILog(g, fmt.Sprintf("Deleted torrent: %s", torrentID), true, nil)
 
-	log.Println(data.ActiveDownloads)
 	return nil
 }
 
