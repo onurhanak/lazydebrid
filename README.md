@@ -2,6 +2,8 @@
 
 lazydebrid is a terminal-based interface for managing Real-Debrid torrents and downloads. It allows you to interact with your Real-Debrid account entirely from the command line, with no browser required.
 
+**It is currently in alpha stage.**
+
 ## Features
 - Vim-like keybindings
 - Add magnet links to Real-Debrid
