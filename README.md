@@ -37,7 +37,7 @@ You'll need Go installed (version 1.23 or later).
 ```bash
 git clone https://github.com/onurhanak/lazydebrid.git
 cd lazydebrid
-go build -o lazydebrid ./cmd/lazydebrid
+go build -o lazydebrid ./cmd/main.go
 ```
 
 Move the built binary to your preferred location (e.g., `/usr/local/bin/`).
