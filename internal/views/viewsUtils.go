@@ -22,6 +22,11 @@ const (
 	ColorBlue   = "\033[34m"
 )
 
+// without this, if user deletes all downloaded torrents
+// the ui log will be spammed infinitely
+// until a download is added
+var warnedNoTorrents bool
+
 func GenerateDetailsString(torrentItem models.Torrent) string {
 	var sb strings.Builder
 
@@ -136,7 +141,10 @@ func PopulateViews(g *gocui.Gui) {
 
 	// temporary. needs a centralized way that uses the error model
 	if len(data.UserDownloads) == 0 {
-		UpdateUILog(g, "API returned no torrents, is your API token correct?", true, nil)
+		if len(data.UserDownloads) == 0 && !warnedNoTorrents {
+			UpdateUILog(g, "API returned no torrents, is your API token correct?", true, nil)
+			warnedNoTorrents = true
+		}
 	}
 
 	activeView := GetView(g, ViewActiveTorrents)
