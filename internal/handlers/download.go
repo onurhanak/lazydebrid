@@ -12,9 +12,14 @@ import (
 	"lazydebrid/internal/views"
 )
 
+const maxConcurrentDownloads = 5
+
 func handleStartDownload(g *gocui.Gui, torrentFile models.TorrentFileDetailed) {
 	log := func(msg string, success bool, err error) {
-		views.UpdateUILog(g, msg, success, err)
+		g.Update(func(g *gocui.Gui) error {
+			views.UpdateUILog(g, msg, success, err)
+			return nil
+		})
 	}
 
 	log(fmt.Sprintf("Downloading %s to %s", torrentFile.Filename, config.DownloadPath()), true, nil)
@@ -27,11 +32,15 @@ func handleStartDownload(g *gocui.Gui, torrentFile models.TorrentFileDetailed) {
 }
 
 func HandleDownloadAll(g *gocui.Gui, _ *gocui.View) error {
+	sem := make(chan struct{}, maxConcurrentDownloads)
 
 	for _, torrentFile := range data.FilesMap {
-		go func(dlItem models.TorrentFileDetailed) {
-			handleStartDownload(g, dlItem)
-		}(torrentFile)
+		tf := torrentFile
+		sem <- struct{}{} // block until download slot available
+		go func() {
+			defer func() { <-sem }()
+			handleStartDownload(g, tf)
+		}()
 	}
 
 	return nil

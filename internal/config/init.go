@@ -7,101 +7,84 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"strings"
 )
 
 func HandleFirstRun() {
-	if CheckFirstRun() {
+	if isFirstRun() {
 		if err := SetupConfigFromUserInput(); err != nil {
+			logs.LogEvent(fmt.Errorf("failed to set up config: %w", err))
 			fmt.Println("Failed to save config:", err)
+			os.Exit(1)
 		}
 	}
 }
 
-func CheckFirstRun() bool {
-	lazyDebridConfigPath, lazyDebridFolderPath, err := ConfigPath()
+func isFirstRun() bool {
+	configPath, dirPath, err := ConfigPath()
 	if err != nil {
-		logs.LogEvent(fmt.Errorf("Cannot read config: %s", err))
+		logs.LogEvent(fmt.Errorf("cannot determine config path: %w", err))
 		return false
 	}
 
-	if _, err := os.Stat(lazyDebridConfigPath); os.IsNotExist(err) {
-		if err := os.MkdirAll(lazyDebridFolderPath, os.ModePerm); err != nil {
-
-			logs.LogEvent(fmt.Errorf("Cannot create config folder: %s", err))
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		if err := os.MkdirAll(dirPath, 0755); err != nil {
+			logs.LogEvent(fmt.Errorf("cannot create config folder: %w", err))
 			return false
 		}
-
-		file, err := os.Create(lazyDebridConfigPath)
-		if err != nil {
-			logs.LogEvent(fmt.Errorf("Cannot create config file: %s", err))
-			return false
-		}
-		defer file.Close()
-
-		return true // first run
+		return true
 	}
-
 	return false
 }
 
 func SetupConfigFromUserInput() error {
 	fmt.Println("Detected first run.")
-	fmt.Print("Enter your API token: ")
 
 	reader := bufio.NewReader(os.Stdin)
+
+	fmt.Print("Enter your API token: ")
 	apiToken, _ := reader.ReadString('\n')
-	apiToken = trimNewline(apiToken)
-	if len(apiToken) <= 0 {
-		return fmt.Errorf("API token cannot be empty.")
+	apiToken = strings.TrimSpace(apiToken)
+	if apiToken == "" {
+		return fmt.Errorf("API token cannot be empty")
 	}
 
 	fmt.Print("Enter download path (leave empty for default $HOME/Downloads): ")
 	downloadPath, _ := reader.ReadString('\n')
-	downloadPath = trimNewline(downloadPath)
+	downloadPath = strings.TrimSpace(downloadPath)
 
 	if downloadPath == "" {
-		usr, _ := user.Current()
-		downloadPath = filepath.Join(usr.HomeDir, "Downloads/")
-	} else {
-		if _, err := os.Stat(downloadPath); os.IsNotExist(err) {
-			fmt.Printf("Download path '%s' does not exist. Create it? (y/n): ", downloadPath)
-			var response string
-			fmt.Scanln(&response)
-			if response == "y" || response == "Y" {
-				err := os.MkdirAll(downloadPath, 0755)
-				if err != nil {
-					fmt.Println("Failed to create directory:", err)
-					os.Exit(1)
-				}
-			} else {
-				// delete config folder so it triggers first run next time
-				_, lazyDebridFolderPath, err := ConfigPath()
-				if err == nil {
-					_ = os.RemoveAll(lazyDebridFolderPath)
-				}
-				fmt.Println("Downloads folder must exist. Exiting.")
-				os.Exit(1)
-			}
+		usr, err := user.Current()
+		if err != nil {
+			return fmt.Errorf("cannot get current user: %w", err)
 		}
+		downloadPath = filepath.Join(usr.HomeDir, "Downloads")
 	}
 
+	// Ensure download path exists and is writable
+	if stat, err := os.Stat(downloadPath); os.IsNotExist(err) {
+		fmt.Printf("Download path '%s' does not exist. Create it? (y/n): ", downloadPath)
+		resp, _ := reader.ReadString('\n')
+		resp = strings.TrimSpace(resp)
+		if strings.ToLower(resp) == "y" {
+			if err := os.MkdirAll(downloadPath, 0755); err != nil {
+				return fmt.Errorf("failed to create download directory: %w", err)
+			}
+		} else {
+			return fmt.Errorf("download path must exist; exiting")
+		}
+	} else if !stat.IsDir() {
+		return fmt.Errorf("download path '%s' is not a directory", downloadPath)
+	}
+
+	// Save settings
 	if err := SaveSetting("apiToken", apiToken); err != nil {
-		return err
+		return fmt.Errorf("failed to save apiToken: %w", err)
 	}
 	if err := SaveSetting("downloadPath", downloadPath); err != nil {
-		return err
+		return fmt.Errorf("failed to save downloadPath: %w", err)
 	}
 
 	fmt.Println("Configuration saved.")
 	return nil
-}
-
-func trimNewline(s string) string {
-	if len(s) > 0 && s[len(s)-1] == '\n' {
-		s = s[:len(s)-1]
-	}
-	if len(s) > 0 && s[len(s)-1] == '\r' {
-		s = s[:len(s)-1]
-	}
-	return s
 }

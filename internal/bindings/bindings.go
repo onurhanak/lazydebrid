@@ -54,7 +54,7 @@ func Keybindings(g *gocui.Gui) error {
 	bind("", gocui.KeyCtrlX, gocui.ModNone, handlers.ShowSetTokenModal)
 	bind("", gocui.KeyCtrlQ, gocui.ModNone, handlers.Quit)
 	bind("", gocui.KeyTab, gocui.ModNone, views.CycleFocusToNextView)
-	bind("", gocui.KeyBackspace2, gocui.ModNone, views.CycleFcousToPreviousView)
+	bind("", gocui.KeyBackspace2, gocui.ModNone, views.CycleFocusToPreviousView)
 
 	if len(bindErrors) > 0 {
 		return fmt.Errorf("some keybindings failed: %v", bindErrors)
