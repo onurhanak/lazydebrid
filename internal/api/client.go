@@ -33,7 +33,8 @@ func DoRequest(req *http.Request) ([]byte, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
-		body, _ := io.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
+		logs.LogEvent(err)
 		return nil, fmt.Errorf("HTTP %d: %s", resp.StatusCode, body)
 	}
 

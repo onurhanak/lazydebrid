@@ -74,7 +74,7 @@ func CycleFocusToNextView(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
 
-func CycleFcousToPreviousView(g *gocui.Gui, v *gocui.View) error {
+func CycleFocusToPreviousView(g *gocui.Gui, v *gocui.View) error {
 	currentViewIdx = (currentViewIdx - 1) % len(Views)
 	name := Views[currentViewIdx]
 

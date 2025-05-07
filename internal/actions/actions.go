@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -21,7 +20,6 @@ import (
 	"github.com/jroimartin/gocui"
 )
 
-// not sure if this will work
 func DeleteTorrent(g *gocui.Gui, v *gocui.View) error {
 
 	torrent, err := views.GetSelectedTorrent(v)
@@ -72,7 +70,6 @@ func SendLinkToAPI(magnetLink string) (string, error) {
 	}
 
 	data.ActiveDownloads = append(data.ActiveDownloads, download)
-	log.Printf("ActiveDownloads now: %d entries", len(data.ActiveDownloads))
 
 	if ok := AddFilesToDebrid(download.ID); !ok {
 		return "", fmt.Errorf("magnet added but file selection failed")

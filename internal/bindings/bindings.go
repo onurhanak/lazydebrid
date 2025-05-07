@@ -1,8 +1,7 @@
 package bindings
 
 import (
-	"log"
-
+	"fmt"
 	"lazydebrid/internal/actions"
 	"lazydebrid/internal/handlers"
 	"lazydebrid/internal/views"
@@ -10,10 +9,12 @@ import (
 	"github.com/jroimartin/gocui"
 )
 
+var bindErrors []error
+
 func Keybindings(g *gocui.Gui) error {
 	bind := func(viewname string, key any, mod gocui.Modifier, handler func(*gocui.Gui, *gocui.View) error) {
 		if err := g.SetKeybinding(viewname, key, mod, handler); err != nil {
-			log.Fatalf("binding failed: %v", err)
+			bindErrors = append(bindErrors, err)
 		}
 	}
 
@@ -54,5 +55,10 @@ func Keybindings(g *gocui.Gui) error {
 	bind("", gocui.KeyCtrlQ, gocui.ModNone, handlers.Quit)
 	bind("", gocui.KeyTab, gocui.ModNone, views.CycleFocusToNextView)
 	bind("", gocui.KeyBackspace2, gocui.ModNone, views.CycleFcousToPreviousView)
+
+	if len(bindErrors) > 0 {
+		return fmt.Errorf("some keybindings failed: %v", bindErrors)
+	}
+
 	return nil
 }
