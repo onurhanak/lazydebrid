@@ -119,9 +119,12 @@ func GetTorrentStatus(g *gocui.Gui, v *gocui.View) error {
 func DownloadFile(torrent models.TorrentFileDetailed) error {
 	path := filepath.Join(config.DownloadPath(), torrent.Filename)
 
-	if _, err := os.Stat(path); err == nil {
-		logs.LogEvent(fmt.Errorf("file already exists, skipping: %s", path))
-		return err
+	if fileInfo, err := os.Stat(path); err == nil {
+		fileSize := fileInfo.Size()
+		if fileSize >= torrent.Filesize {
+			logs.LogEvent(fmt.Errorf("file already exists, skipping: %s", path))
+			return err
+		}
 	}
 	// TODO
 	// this request does not require authorization
