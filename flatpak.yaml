@@ -1,0 +1,24 @@
+app-id: io.lazydebrid.Lazydebrid
+runtime: org.freedesktop.Platform
+runtime-version: '24.08'
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.golang
+command: lazydebrid
+finish-args:
+  - --share=network
+  - --filesystem=home
+  - --filesystem=~/.config/lazyDebrid:rw
+build-options:
+  append-path: /usr/lib/sdk/golang/bin
+modules:
+  - name: lazydebrid
+    buildsystem: simple
+    build-commands:
+      - mkdir -p /app/bin
+      - cd cmd
+      - go build -mod=vendor -o /app/bin/lazydebrid ./cmd/main.go
+    sources:
+      - type: dir
+        path: .
+
